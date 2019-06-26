@@ -2,7 +2,7 @@ VERSION 5.00
 Object = "{F9043C88-F6F2-101A-A3C9-08002B2F49FB}#1.2#0"; "comdlg32.ocx"
 Object = "{5E9E78A0-531B-11CF-91F6-C2863C385E30}#1.0#0"; "MSFLXGRD.OCX"
 Object = "{86CF1D34-0C5F-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCT2.OCX"
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.2#0"; "MSCOMCTL.OCX"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.2#0"; "mscomctl.ocx"
 Begin VB.Form Frm_Adm_Validación_Tiempo_Trabajo 
    BackColor       =   &H00FFFFFF&
    BorderStyle     =   1  'Fixed Single
@@ -116,7 +116,7 @@ Begin VB.Form Frm_Adm_Validación_Tiempo_Trabajo
             _ExtentY        =   556
             _Version        =   393216
             CustomFormat    =   "ddd dd MMM yyyy"
-            Format          =   112787456
+            Format          =   89260032
             CurrentDate     =   39940
          End
          Begin MSComctlLib.ProgressBar PrgBar_Validacion_Horas 
@@ -1280,6 +1280,7 @@ Dim Rs_Consulta_Dia_Feriado As rdoResultset                     'Informacion del
 Dim Rs_Consulta_Cat_Empleados As rdoResultset                   'Informacion del empleado
 Dim Rs_Consulta_Adm_Asistencias_Validadas As rdoResultset
 Dim Rs_Consulta_Rutas_Transportes As rdoResultset
+Dim Rs_Consulta_Turno_Empleado_De_Tabla_CambiosTurno As rdoResultset
 Dim Rs_Consulta_Checada As rdoResultset
 Dim Bool_Proceso As Boolean
 Dim Permiso As String                                           'Informacion del permiso
@@ -1324,6 +1325,7 @@ Dim Permiso_Validado As String
 Dim Permiso_Referencia As String
 Dim Ruta_Transporte As String
 Dim Dia_Descanso As String
+Dim Str_Turno_De_Tabla As String
 
 On Error GoTo HANDLER:
     Partida = 0
@@ -1537,183 +1539,61 @@ On Error GoTo HANDLER:
                 Else
                     Ruta_Transporte = "" & "|" & ""
                 End If
+                
+                
                 If Validada = "N" Then
                     
-                    '--------------------------------------------------------------------------------------------
-                    '--------------------------------------------------------------------------------------------
-                    '--------------------------------------------------------------------------------------------
-                    '--------------------------------------------------------------------------------------------
-                    'Obtiene la informacion del turno del empleado
-                    Mi_SQL = "SELECT CE.Turno_ID,Cat_Turnos_Detalles.Hora_Inicio,Cat_Turnos_Detalles.Hora_Termino,Cat_Turnos_Detalles.Comida_Inicio,Cat_Turnos_Detalles.Comida_Termino,Cat_Turnos_Detalles.Horas_Turno,Cat_Turnos_Detalles.Horas_Comida,Cat_Turnos_Detalles.Dia_Descanso,CT.Nombre"
-                    Mi_SQL = Mi_SQL & " FROM Cat_Empleados CE,Cat_Turnos CT,Cat_Turnos_Detalles"
-                    Mi_SQL = Mi_SQL & " WHERE CE.Turno_ID=CT.Turno_ID"
-                    Mi_SQL = Mi_SQL & " AND CT.Turno_ID=Cat_Turnos_Detalles.Turno_ID"
-                    Mi_SQL = Mi_SQL & " AND CE.Empleado_ID='" & .rdoColumns("Empleado_ID") & "'"
-                    If UCase(Format(Fecha, "dddd")) = "SABADO" Or UCase(Format(Fecha, "dddd")) = "SÁBADO" Or UCase(Format(Fecha, "dddd")) = "SATURDAY" Then
-                        Mi_SQL = Mi_SQL & " AND Cat_Turnos_Detalles.Dia_Semana IN ('Sabado')"
-                    Else
-                        If UCase(Format(Fecha, "dddd")) = "MIERCOLES" Or UCase(Format(Fecha, "dddd")) = "MIÉRCOLES" Or UCase(Format(Fecha, "dddd")) = "WEDNESDAY" Then
-                            Mi_SQL = Mi_SQL & " AND Cat_Turnos_Detalles.Dia_Semana IN ('Miercoles')"
-                        Else
-                            Mi_SQL = Mi_SQL & " AND Cat_Turnos_Detalles.Dia_Semana='" & Format(Fecha, "dddd") & "'"
-                        End If
-                    End If
-                    Mi_SQL = Mi_SQL & " AND NOT EXISTS ("
-                    Mi_SQL = Mi_SQL & "     SELECT Roles_Calendarios.No_Tarjeta"
-                    Mi_SQL = Mi_SQL & "     FROM ("
-                    Mi_SQL = Mi_SQL & "         SELECT Cat_Calendarios_Turnos_Roles.No_Tarjeta"
-'                    Mi_SQL = Mi_SQL & "             ,DATEADD(DAY, dbo.Obtener_Numero_Dia_Semana(Cat_Calendarios_Turnos_Detalles.Dia_Semana) - 1, DATEADD(WEEK, Cat_Calendarios_Turnos_Detalles.Semana - 1, CAST(YEAR(Cat_Calendarios_Turnos.Fecha_Inicio) AS VARCHAR) + '0101')) Fecha_Calculada"
-                    Mi_SQL = Mi_SQL & "         FROM Cat_Calendarios_Turnos"
-                    Mi_SQL = Mi_SQL & "             ,Cat_Calendarios_Turnos_Detalles"
-                    Mi_SQL = Mi_SQL & "             ,Cat_Calendarios_Turnos_Roles"
-                    Mi_SQL = Mi_SQL & "         WHERE Cat_Calendarios_Turnos_Roles.No_Tarjeta = CE.No_Tarjeta"
-                    Mi_SQL = Mi_SQL & "             AND DATEADD(DAY, dbo.Obtener_Numero_Dia_Semana(Cat_Calendarios_Turnos_Detalles.Dia_Semana) - 1, DATEADD(WEEK, Cat_Calendarios_Turnos_Detalles.Semana - 1, CAST(YEAR(Cat_Calendarios_Turnos.Fecha_Inicio) AS VARCHAR) + '0101')) = '" & Format(Fecha, "YYYYMMDD") & "'"
-                    Mi_SQL = Mi_SQL & "             AND Cat_Calendarios_Turnos_Detalles.Estatus <> 'ELIMINADO'"
-                    Mi_SQL = Mi_SQL & "             AND Cat_Calendarios_Turnos.Calendario_Turno_ID = Cat_Calendarios_Turnos_Detalles.Calendario_Turno_ID"
-                    Mi_SQL = Mi_SQL & "             AND Cat_Calendarios_Turnos_Detalles.Calendario_Turno_ID = Cat_Calendarios_Turnos_Roles.Calendario_Turno_ID"
-                    Mi_SQL = Mi_SQL & "             AND Cat_Calendarios_Turnos_Detalles.Calendario_Turno_Detalle_ID = Cat_Calendarios_Turnos_Roles.Calendario_Turno_Detalle_ID"
-'                    Mi_SQL = Mi_SQL & "             AND (Cat_Calendarios_Turnos_Detalles.Hora_Termino - Cat_Calendarios_Turnos_Detalles.Hora_Inicio) >=0"
-                    Mi_SQL = Mi_SQL & "         ) Roles_Calendarios"
-'                    Mi_SQL = Mi_SQL & "     WHERE Roles_Calendarios.No_Tarjeta = CE.No_Tarjeta"
-'                    Mi_SQL = Mi_SQL & "     AND Roles_Calendarios.Fecha_Calculada = '" & Format(Fecha, "YYYYMMDD") & "'"
-                    Mi_SQL = Mi_SQL & " )"
-                    Set Rs_Consulta_Informacion_Turnos = Conectar_Ayudante.Recordset_Consultar(Mi_SQL)
                     
-                    If Not Rs_Consulta_Informacion_Turnos.EOF Then
-                        Turno_Empleado = Rs_Consulta_Informacion_Turnos.rdoColumns("Turno_ID")
-                        Nombre_Turno = Rs_Consulta_Informacion_Turnos.rdoColumns("Nombre")
-                        Hora_Inicio_Turno = Format(Rs_Consulta_Informacion_Turnos.rdoColumns("Hora_Inicio"), "HH:mm:ss")
-                        Hora_Termino_Turno = Format(Rs_Consulta_Informacion_Turnos.rdoColumns("Hora_Termino"), "HH:mm:ss")
-                        Hora_Comida_Inicio = Format(Rs_Consulta_Informacion_Turnos.rdoColumns("Comida_Inicio"), "HH:mm:ss")
-                        Hora_Comida_Termino = Format(Rs_Consulta_Informacion_Turnos.rdoColumns("Comida_Termino"), "HH:mm:ss")
-                        Horas_Turno = Rs_Consulta_Informacion_Turnos.rdoColumns("Horas_Turno")
-                        Horas_Laboradas_Turno = Horas_Turno
-                        Dia_Descanso = Rs_Consulta_Informacion_Turnos.rdoColumns("Dia_Descanso")
+                    Mi_SQL = "select top 1 * from Adm_Cambios_Turnos"
+                    Mi_SQL = Mi_SQL & " where Empleado_ID = '" & .rdoColumns("Empleado_ID") & "'"
+                    Mi_SQL = Mi_SQL & " and Fecha_Cambio <= '" & Format(Fecha, "MM/dd/yyyy") & "'"
+                    Mi_SQL = Mi_SQL & " order by Fecha_Cambio desc, Consecutivo desc"
+                    Set Rs_Consulta_Turno_Empleado_De_Tabla_CambiosTurno = Conectar_Ayudante.Recordset_Consultar(Mi_SQL)
+                    
+                     If Not Rs_Consulta_Turno_Empleado_De_Tabla_CambiosTurno.EOF Then
+                        Str_Turno_De_Tabla = Rs_Consulta_Turno_Empleado_De_Tabla_CambiosTurno.rdoColumns("Turno_Nuevo_ID")
                         
-                        Bool_Proceso = False
-                        
-                        '   se actualizaran los tiempos si se trata del 3ro turno con id '00003'
-                        If Turno_Empleado = "00003" Then
-                        
-                            'Consulta la hora de entrada del día
-                            Mi_SQL = "SELECT TOP 1 Adm_Asistencias_Registro_Checadores.No_Tarjeta,"
-                            Mi_SQL = Mi_SQL & " Adm_Asistencias_Registro_Checadores.Hora"
-                            Mi_SQL = Mi_SQL & " FROM Adm_Asistencias_Registro_Checadores,Cat_Turnos"
-                            Mi_SQL = Mi_SQL & " WHERE Adm_Asistencias_Registro_Checadores.Empresa_ID='" & Format(Cmb_Adm_Validacion_Horas_Empresa.ItemData(Cmb_Adm_Validacion_Horas_Empresa.ListIndex), "00000") & "'"
-                            Mi_SQL = Mi_SQL & " AND Adm_Asistencias_Registro_Checadores.Fecha='" & Fecha & "'"
-                            Mi_SQL = Mi_SQL & " AND Adm_Asistencias_Registro_Checadores.Hora>'1899-12-30 12:00:00.000'"       'Debe ser menor de las 12 hrs. del día siguiente para cerrar el ciclo de un día
-                            Mi_SQL = Mi_SQL & " AND Adm_Asistencias_Registro_Checadores.No_Tarjeta='" & .rdoColumns("No_Tarjeta") & "'"
-                            Mi_SQL = Mi_SQL & " AND Cat_Turnos.Horas_Turno<0"
-                            Mi_SQL = Mi_SQL & " ORDER BY Adm_Asistencias_Registro_Checadores.Fecha,Adm_Asistencias_Registro_Checadores.No_Tarjeta,Adm_Asistencias_Registro_Checadores.Hora"
-                            Set Rs_Consulta_Checada = Conectar_Ayudante.Recordset_Consultar(Mi_SQL)
                             
-                            '   se consulta la informacion de las horas del checador
-                            If Not Rs_Consulta_Checada.EOF Then
-                            
-                                Hora_Entrada_Auxiliar = Rs_Consulta_Checada.rdoColumns("Hora")
-                            
-                                If (Hora_Entrada_Auxiliar >= "22:00:00") Then
-                                    Hora_Entrada = Rs_Consulta_Checada.rdoColumns("Hora")
-                                    Hora_Salida = Rs_Consulta_Checada.rdoColumns("Hora")
-                                    Bool_Proceso = True
-                                End If
-                            
-                               
-                            End If
-                            Rs_Consulta_Checada.Close
-                            
-                            
-                            If (Bool_Proceso = True) Then
-                                'Consulta la hora de salida del día siguiente
-                                 Mi_SQL = "SELECT TOP 1 Adm_Asistencias_Registro_Checadores.No_Tarjeta,Adm_Asistencias_Registro_Checadores.Hora"
-                                 Mi_SQL = Mi_SQL & " FROM Adm_Asistencias_Registro_Checadores,Cat_Turnos"
-                                 Mi_SQL = Mi_SQL & " WHERE Adm_Asistencias_Registro_Checadores.Empresa_ID='" & Format(Cmb_Adm_Validacion_Horas_Empresa.ItemData(Cmb_Adm_Validacion_Horas_Empresa.ListIndex), "00000") & "'"
-                                 Mi_SQL = Mi_SQL & " AND Adm_Asistencias_Registro_Checadores.Fecha='" & Format(DateAdd("d", 1, Fecha), "MM/dd/yyyy") & "'"
-                                 Mi_SQL = Mi_SQL & " AND Adm_Asistencias_Registro_Checadores.Hora<'1899-12-30 12:00:00.000'"       'Debe ser menor de las 12 hrs. del día siguiente para cerrar el ciclo de un día
-                                 Mi_SQL = Mi_SQL & " AND Adm_Asistencias_Registro_Checadores.No_Tarjeta='" & .rdoColumns("No_Tarjeta") & "'"
-                                 Mi_SQL = Mi_SQL & " AND Cat_Turnos.Horas_Turno<0"
-                                 Mi_SQL = Mi_SQL & " ORDER BY Adm_Asistencias_Registro_Checadores.Fecha,Adm_Asistencias_Registro_Checadores.No_Tarjeta,Adm_Asistencias_Registro_Checadores.Hora"
-                                 Set Rs_Consulta_Checada = Conectar_Ayudante.Recordset_Consultar(Mi_SQL)
-                                 If Not Rs_Consulta_Checada.EOF Then
-                                     If Hora_Entrada = "0" Then 'Si no tuvo hora de entrada le asigna su entrada coo su salida y no le calcula tiempo extra
-                                         Hora_Entrada = Rs_Consulta_Checada.rdoColumns("Hora")
-                                     End If
-                                     Hora_Salida = Rs_Consulta_Checada.rdoColumns("Hora")
-                                 End If
-                                 Rs_Consulta_Checada.Close
-                                       
-                            '-----------------------------------------------------------
-                            Else
-                            '-----------------------------------------------------------
-                                'Consulta la hora de salida del día actual
-                                 Mi_SQL = "SELECT TOP 1 Adm_Asistencias_Registro_Checadores.No_Tarjeta"
-                                 Mi_SQL = Mi_SQL & ", Cast(Adm_Asistencias_Registro_Checadores.Hora as DATETIME) as Hora"
-                                 Mi_SQL = Mi_SQL & " FROM Adm_Asistencias_Registro_Checadores,Cat_Turnos"
-                                 Mi_SQL = Mi_SQL & " WHERE Adm_Asistencias_Registro_Checadores.Empresa_ID='" & Format(Cmb_Adm_Validacion_Horas_Empresa.ItemData(Cmb_Adm_Validacion_Horas_Empresa.ListIndex), "00000") & "'"
-                                 Mi_SQL = Mi_SQL & " AND Adm_Asistencias_Registro_Checadores.Fecha='" & Format(Fecha, "MM/dd/yyyy") & "'"
-                                 Mi_SQL = Mi_SQL & " AND Adm_Asistencias_Registro_Checadores.Hora<'1899-12-30 23:59:59.000'"       'Debe ser menor de las 12 hrs. del día siguiente para cerrar el ciclo de un día
-                                 Mi_SQL = Mi_SQL & " AND Adm_Asistencias_Registro_Checadores.No_Tarjeta='" & .rdoColumns("No_Tarjeta") & "'"
-                                 Mi_SQL = Mi_SQL & " AND Cat_Turnos.Horas_Turno<0"
-                                 Mi_SQL = Mi_SQL & " ORDER BY Adm_Asistencias_Registro_Checadores.Fecha,Adm_Asistencias_Registro_Checadores.No_Tarjeta,Adm_Asistencias_Registro_Checadores.Hora desc"
-                                 Set Rs_Consulta_Checada = Conectar_Ayudante.Recordset_Consultar(Mi_SQL)
-                                 If Not Rs_Consulta_Checada.EOF Then
-                                     If Hora_Entrada = "0" Then 'Si no tuvo hora de entrada le asigna su entrada coo su salida y no le calcula tiempo extra
-                                         Hora_Entrada = Rs_Consulta_Checada.rdoColumns("Hora")
-                                     End If
-                                     
-                                     Hora_Salida = CDate(Rs_Consulta_Checada.rdoColumns("Hora"))
-                                     Hora_Salida_Auxiliar = Rs_Consulta_Checada.rdoColumns("Hora")
-                                 End If
-                                 Rs_Consulta_Checada.Close
-                                       
-                            End If
-                            
-                           
-                          
-                                  
-                        End If
-                        
-                        
-'                        '   se calculan los nuevos totales
-'                        If (DateDiff("n", Hora_Salida, Hora_Entrada) / 60) > 0 Then
-'                            Hora_Real = DateDiff("n", Format(Hora_Salida, "HH:mm:ss"), Format(Hora_Entrada, "HH:mm:ss")) / 60
-'
-'                            Dim x As Integer
-'
-'                            'Format(Datos(1), "MM/dd/yyyy")
-'                            x = DateDiff("h", Format(Hora_Salida, "HH:mm:ss"), Format(Hora_Entrada, "HH:mm:ss"))
-'
-'                        Else
-'                            Hora_Real = 24 + (DateDiff("n", Hora_Salida, Hora_Entrada) / 60)
-'                        End If
-                               
-                               
-                    Else    'Si no encuentra día de la semana busca en el general
-                        Rs_Consulta_Informacion_Turnos.Close
-                        Mi_SQL = "SELECT CE.Turno_ID,CT.Hora_Inicio,CT.Hora_Termino,CT.Comida_Inicio,CT.Comida_Termino,CT.Horas_Turno,CT.Horas_Comida,CT.Nombre"
-                        Mi_SQL = Mi_SQL & " FROM Cat_Empleados CE,Cat_Turnos CT"
-                        Mi_SQL = Mi_SQL & " WHERE CE.Turno_ID=CT.Turno_ID"
+                        '--------------------------------------------------------------------------------------------
+                        '--------------------------------------------------------------------------------------------
+                        '--------------------------------------------------------------------------------------------
+                        '--------------------------------------------------------------------------------------------
+                        'Obtiene la informacion del turno del empleado
+                        Mi_SQL = "SELECT CE.Turno_ID,Cat_Turnos_Detalles.Hora_Inicio,Cat_Turnos_Detalles.Hora_Termino,Cat_Turnos_Detalles.Comida_Inicio,Cat_Turnos_Detalles.Comida_Termino,Cat_Turnos_Detalles.Horas_Turno,Cat_Turnos_Detalles.Horas_Comida,Cat_Turnos_Detalles.Dia_Descanso,CT.Nombre"
+                        Mi_SQL = Mi_SQL & " FROM Cat_Empleados CE,Cat_Turnos CT,Cat_Turnos_Detalles"
+                        Mi_SQL = Mi_SQL & " WHERE CT.Turno_ID = " & Str_Turno_De_Tabla
+                        Mi_SQL = Mi_SQL & " AND CT.Turno_ID=Cat_Turnos_Detalles.Turno_ID"
                         Mi_SQL = Mi_SQL & " AND CE.Empleado_ID='" & .rdoColumns("Empleado_ID") & "'"
+                        If UCase(Format(Fecha, "dddd")) = "SABADO" Or UCase(Format(Fecha, "dddd")) = "SÁBADO" Or UCase(Format(Fecha, "dddd")) = "SATURDAY" Then
+                            Mi_SQL = Mi_SQL & " AND Cat_Turnos_Detalles.Dia_Semana IN ('Sabado')"
+                        Else
+                            If UCase(Format(Fecha, "dddd")) = "MIERCOLES" Or UCase(Format(Fecha, "dddd")) = "MIÉRCOLES" Or UCase(Format(Fecha, "dddd")) = "WEDNESDAY" Then
+                                Mi_SQL = Mi_SQL & " AND Cat_Turnos_Detalles.Dia_Semana IN ('Miercoles')"
+                            Else
+                                Mi_SQL = Mi_SQL & " AND Cat_Turnos_Detalles.Dia_Semana='" & Format(Fecha, "dddd") & "'"
+                            End If
+                        End If
                         Mi_SQL = Mi_SQL & " AND NOT EXISTS ("
                         Mi_SQL = Mi_SQL & "     SELECT Roles_Calendarios.No_Tarjeta"
                         Mi_SQL = Mi_SQL & "     FROM ("
                         Mi_SQL = Mi_SQL & "         SELECT Cat_Calendarios_Turnos_Roles.No_Tarjeta"
-'                        Mi_SQL = Mi_SQL & "             ,DATEADD(DAY, dbo.Obtener_Numero_Dia_Semana(Cat_Calendarios_Turnos_Detalles.Dia_Semana) - 1, DATEADD(WEEK, Cat_Calendarios_Turnos_Detalles.Semana - 1, CAST(YEAR(Cat_Calendarios_Turnos.Fecha_Inicio) AS VARCHAR) + '0101')) Fecha_Calculada"
-                        Mi_SQL = Mi_SQL & "         From Cat_Calendarios_Turnos"
+    '                    Mi_SQL = Mi_SQL & "             ,DATEADD(DAY, dbo.Obtener_Numero_Dia_Semana(Cat_Calendarios_Turnos_Detalles.Dia_Semana) - 1, DATEADD(WEEK, Cat_Calendarios_Turnos_Detalles.Semana - 1, CAST(YEAR(Cat_Calendarios_Turnos.Fecha_Inicio) AS VARCHAR) + '0101')) Fecha_Calculada"
+                        Mi_SQL = Mi_SQL & "         FROM Cat_Calendarios_Turnos"
                         Mi_SQL = Mi_SQL & "             ,Cat_Calendarios_Turnos_Detalles"
                         Mi_SQL = Mi_SQL & "             ,Cat_Calendarios_Turnos_Roles"
                         Mi_SQL = Mi_SQL & "         WHERE Cat_Calendarios_Turnos_Roles.No_Tarjeta = CE.No_Tarjeta"
-                        Mi_SQL = Mi_SQL & "             AND Cat_Calendarios_Turnos.Calendario_Turno_ID = Cat_Calendarios_Turnos_Detalles.Calendario_Turno_ID"
+                        Mi_SQL = Mi_SQL & "             AND DATEADD(DAY, dbo.Obtener_Numero_Dia_Semana(Cat_Calendarios_Turnos_Detalles.Dia_Semana) - 1, DATEADD(WEEK, Cat_Calendarios_Turnos_Detalles.Semana - 1, CAST(YEAR(Cat_Calendarios_Turnos.Fecha_Inicio) AS VARCHAR) + '0101')) = '" & Format(Fecha, "YYYYMMDD") & "'"
                         Mi_SQL = Mi_SQL & "             AND Cat_Calendarios_Turnos_Detalles.Estatus <> 'ELIMINADO'"
+                        Mi_SQL = Mi_SQL & "             AND Cat_Calendarios_Turnos.Calendario_Turno_ID = Cat_Calendarios_Turnos_Detalles.Calendario_Turno_ID"
                         Mi_SQL = Mi_SQL & "             AND Cat_Calendarios_Turnos_Detalles.Calendario_Turno_ID = Cat_Calendarios_Turnos_Roles.Calendario_Turno_ID"
                         Mi_SQL = Mi_SQL & "             AND Cat_Calendarios_Turnos_Detalles.Calendario_Turno_Detalle_ID = Cat_Calendarios_Turnos_Roles.Calendario_Turno_Detalle_ID"
-                        Mi_SQL = Mi_SQL & "             AND DATEADD(DAY, dbo.Obtener_Numero_Dia_Semana(Cat_Calendarios_Turnos_Detalles.Dia_Semana) - 1, DATEADD(WEEK, Cat_Calendarios_Turnos_Detalles.Semana - 1, CAST(YEAR(Cat_Calendarios_Turnos.Fecha_Inicio) AS VARCHAR) + '0101')) = '" & Format(Fecha, "YYYYMMDD") & "'"
-'                        Mi_SQL = Mi_SQL & "             AND (Cat_Calendarios_Turnos_Detalles.Hora_Termino - Cat_Calendarios_Turnos_Detalles.Hora_Inicio) >=0"
+    '                    Mi_SQL = Mi_SQL & "             AND (Cat_Calendarios_Turnos_Detalles.Hora_Termino - Cat_Calendarios_Turnos_Detalles.Hora_Inicio) >=0"
                         Mi_SQL = Mi_SQL & "         ) Roles_Calendarios"
-'                        Mi_SQL = Mi_SQL & "     WHERE Roles_Calendarios.No_Tarjeta = CE.No_Tarjeta"
-'                        Mi_SQL = Mi_SQL & "     AND Roles_Calendarios.Fecha_Calculada = '" & Format(Fecha, "YYYYMMDD") & "'"
+    '                    Mi_SQL = Mi_SQL & "     WHERE Roles_Calendarios.No_Tarjeta = CE.No_Tarjeta"
+    '                    Mi_SQL = Mi_SQL & "     AND Roles_Calendarios.Fecha_Calculada = '" & Format(Fecha, "YYYYMMDD") & "'"
                         Mi_SQL = Mi_SQL & " )"
                         Set Rs_Consulta_Informacion_Turnos = Conectar_Ayudante.Recordset_Consultar(Mi_SQL)
+                        
                         If Not Rs_Consulta_Informacion_Turnos.EOF Then
                             Turno_Empleado = Rs_Consulta_Informacion_Turnos.rdoColumns("Turno_ID")
                             Nombre_Turno = Rs_Consulta_Informacion_Turnos.rdoColumns("Nombre")
@@ -1723,34 +1603,135 @@ On Error GoTo HANDLER:
                             Hora_Comida_Termino = Format(Rs_Consulta_Informacion_Turnos.rdoColumns("Comida_Termino"), "HH:mm:ss")
                             Horas_Turno = Rs_Consulta_Informacion_Turnos.rdoColumns("Horas_Turno")
                             Horas_Laboradas_Turno = Horas_Turno
-                            Dia_Descanso = "NO"
-                        Else
-                            Mi_SQL = "SELECT Cat_Calendarios_Turnos.Calendario_Turno_ID"
-                            Mi_SQL = Mi_SQL & "     ,Cat_Calendarios_Turnos_Detalles.Calendario_Turno_Detalle_ID"
-                            Mi_SQL = Mi_SQL & "     ,Cat_Calendarios_Turnos_Roles.No_Tarjeta"
-                            Mi_SQL = Mi_SQL & "     ,Cat_Calendarios_Turnos_Detalles.Hora_Inicio"
-                            Mi_SQL = Mi_SQL & "     ,Cat_Calendarios_Turnos_Detalles.Hora_Termino"
-                            Mi_SQL = Mi_SQL & "     ,Cat_Calendarios_Turnos_Detalles.Comida_Inicio"
-                            Mi_SQL = Mi_SQL & "     ,Cat_Calendarios_Turnos_Detalles.Comida_Termino"
-                            Mi_SQL = Mi_SQL & "     ,CASE WHEN (Cat_Calendarios_Turnos_Detalles.Hora_Termino - Cat_Calendarios_Turnos_Detalles.Hora_Inicio) >= 0 THEN (Cat_Calendarios_Turnos_Detalles.Hora_Termino - Cat_Calendarios_Turnos_Detalles.Hora_Inicio) ELSE (Cat_Calendarios_Turnos_Detalles.Hora_Inicio - Cat_Calendarios_Turnos_Detalles.Hora_Termino) END AS Horas_Turno"
-                            Mi_SQL = Mi_SQL & "     ,CASE WHEN (Cat_Calendarios_Turnos_Detalles.Comida_Termino - Cat_Calendarios_Turnos_Detalles.Comida_Inicio) >=0 THEN (Cat_Calendarios_Turnos_Detalles.Comida_Termino - Cat_Calendarios_Turnos_Detalles.Comida_Inicio) ELSE (Cat_Calendarios_Turnos_Detalles.Comida_Inicio - Cat_Calendarios_Turnos_Detalles.Comida_Termino) END AS Horas_Comida"
-                            Mi_SQL = Mi_SQL & "     ,Cat_Calendarios_Turnos_Detalles.Nombre_Turno"
-                            Mi_SQL = Mi_SQL & " FROM Cat_Calendarios_Turnos"
-                            Mi_SQL = Mi_SQL & "     ,Cat_Calendarios_Turnos_Detalles"
-                            Mi_SQL = Mi_SQL & "     ,Cat_Calendarios_Turnos_Roles"
-                            Mi_SQL = Mi_SQL & "     ,Cat_Empleados"
-                            Mi_SQL = Mi_SQL & " WHERE Cat_Empleados.Empleado_ID = '" & .rdoColumns("Empleado_ID") & "'"
-                            Mi_SQL = Mi_SQL & "     AND Cat_Calendarios_Turnos_Roles.No_Tarjeta = Cat_Empleados.No_Tarjeta"
-                            Mi_SQL = Mi_SQL & "     AND DATEADD(DAY, dbo.Obtener_Numero_Dia_Semana(Cat_Calendarios_Turnos_Detalles.Dia_Semana) - 1, DATEADD(WEEK, Cat_Calendarios_Turnos_Detalles.Semana - 1, CAST(YEAR(Cat_Calendarios_Turnos.Fecha_Inicio) AS VARCHAR) + '0101')) = '" & Format(Fecha, "YYYYMMDD") & "'"
-                            Mi_SQL = Mi_SQL & "     AND Cat_Calendarios_Turnos_Detalles.Estatus <> 'ELIMINADO'"
-                            Mi_SQL = Mi_SQL & "     AND Cat_Calendarios_Turnos.Calendario_Turno_ID = Cat_Calendarios_Turnos_Detalles.Calendario_Turno_ID"
-                            Mi_SQL = Mi_SQL & "     AND Cat_Calendarios_Turnos_Detalles.Calendario_Turno_ID = Cat_Calendarios_Turnos_Roles.Calendario_Turno_ID"
-                            Mi_SQL = Mi_SQL & "     AND Cat_Calendarios_Turnos_Detalles.Calendario_Turno_Detalle_ID = Cat_Calendarios_Turnos_Roles.Calendario_Turno_Detalle_ID"
+                            Dia_Descanso = Rs_Consulta_Informacion_Turnos.rdoColumns("Dia_Descanso")
+                            
+                            Bool_Proceso = False
+                            
+                            '   se actualizaran los tiempos si se trata del 3ro turno con id '00003'
+                            If Str_Turno_De_Tabla = "00003" Then
+                            
+                                'Consulta la hora de entrada del día
+                                Mi_SQL = "SELECT TOP 1 Adm_Asistencias_Registro_Checadores.No_Tarjeta,"
+                                Mi_SQL = Mi_SQL & " Adm_Asistencias_Registro_Checadores.Hora"
+                                Mi_SQL = Mi_SQL & " FROM Adm_Asistencias_Registro_Checadores,Cat_Turnos"
+                                Mi_SQL = Mi_SQL & " WHERE Adm_Asistencias_Registro_Checadores.Empresa_ID='" & Format(Cmb_Adm_Validacion_Horas_Empresa.ItemData(Cmb_Adm_Validacion_Horas_Empresa.ListIndex), "00000") & "'"
+                                Mi_SQL = Mi_SQL & " AND Adm_Asistencias_Registro_Checadores.Fecha='" & Fecha & "'"
+                                Mi_SQL = Mi_SQL & " AND Adm_Asistencias_Registro_Checadores.Hora>'1899-12-30 12:00:00.000'"       'Debe ser menor de las 12 hrs. del día siguiente para cerrar el ciclo de un día
+                                Mi_SQL = Mi_SQL & " AND Adm_Asistencias_Registro_Checadores.No_Tarjeta='" & .rdoColumns("No_Tarjeta") & "'"
+                                Mi_SQL = Mi_SQL & " AND Cat_Turnos.Horas_Turno<0"
+                                Mi_SQL = Mi_SQL & " ORDER BY Adm_Asistencias_Registro_Checadores.Fecha,Adm_Asistencias_Registro_Checadores.No_Tarjeta,Adm_Asistencias_Registro_Checadores.Hora"
+                                Set Rs_Consulta_Checada = Conectar_Ayudante.Recordset_Consultar(Mi_SQL)
+                                
+                                '   se consulta la informacion de las horas del checador
+                                If Not Rs_Consulta_Checada.EOF Then
+                                
+                                    Hora_Entrada_Auxiliar = Rs_Consulta_Checada.rdoColumns("Hora")
+                                
+                                    If (Hora_Entrada_Auxiliar >= "22:00:00") Then
+                                        Hora_Entrada = Rs_Consulta_Checada.rdoColumns("Hora")
+                                        Hora_Salida = Rs_Consulta_Checada.rdoColumns("Hora")
+                                        Bool_Proceso = True
+                                    End If
+                                
+                                   
+                                End If
+                                Rs_Consulta_Checada.Close
+                                
+                                
+                                If (Bool_Proceso = True) Then
+                                    'Consulta la hora de salida del día siguiente
+                                     Mi_SQL = "SELECT TOP 1 Adm_Asistencias_Registro_Checadores.No_Tarjeta,Adm_Asistencias_Registro_Checadores.Hora"
+                                     Mi_SQL = Mi_SQL & " FROM Adm_Asistencias_Registro_Checadores,Cat_Turnos"
+                                     Mi_SQL = Mi_SQL & " WHERE Adm_Asistencias_Registro_Checadores.Empresa_ID='" & Format(Cmb_Adm_Validacion_Horas_Empresa.ItemData(Cmb_Adm_Validacion_Horas_Empresa.ListIndex), "00000") & "'"
+                                     Mi_SQL = Mi_SQL & " AND Adm_Asistencias_Registro_Checadores.Fecha='" & Format(DateAdd("d", 1, Fecha), "MM/dd/yyyy") & "'"
+                                     Mi_SQL = Mi_SQL & " AND Adm_Asistencias_Registro_Checadores.Hora<'1899-12-30 12:00:00.000'"       'Debe ser menor de las 12 hrs. del día siguiente para cerrar el ciclo de un día
+                                     Mi_SQL = Mi_SQL & " AND Adm_Asistencias_Registro_Checadores.No_Tarjeta='" & .rdoColumns("No_Tarjeta") & "'"
+                                     Mi_SQL = Mi_SQL & " AND Cat_Turnos.Horas_Turno<0"
+                                     Mi_SQL = Mi_SQL & " ORDER BY Adm_Asistencias_Registro_Checadores.Fecha,Adm_Asistencias_Registro_Checadores.No_Tarjeta,Adm_Asistencias_Registro_Checadores.Hora"
+                                     Set Rs_Consulta_Checada = Conectar_Ayudante.Recordset_Consultar(Mi_SQL)
+                                     If Not Rs_Consulta_Checada.EOF Then
+                                         If Hora_Entrada = "0" Then 'Si no tuvo hora de entrada le asigna su entrada coo su salida y no le calcula tiempo extra
+                                             Hora_Entrada = Rs_Consulta_Checada.rdoColumns("Hora")
+                                         End If
+                                         Hora_Salida = Rs_Consulta_Checada.rdoColumns("Hora")
+                                     End If
+                                     Rs_Consulta_Checada.Close
+                                           
+                                '-----------------------------------------------------------
+                                Else
+                                '-----------------------------------------------------------
+                                    'Consulta la hora de salida del día actual
+                                     Mi_SQL = "SELECT TOP 1 Adm_Asistencias_Registro_Checadores.No_Tarjeta"
+                                     Mi_SQL = Mi_SQL & ", Cast(Adm_Asistencias_Registro_Checadores.Hora as DATETIME) as Hora"
+                                     Mi_SQL = Mi_SQL & " FROM Adm_Asistencias_Registro_Checadores,Cat_Turnos"
+                                     Mi_SQL = Mi_SQL & " WHERE Adm_Asistencias_Registro_Checadores.Empresa_ID='" & Format(Cmb_Adm_Validacion_Horas_Empresa.ItemData(Cmb_Adm_Validacion_Horas_Empresa.ListIndex), "00000") & "'"
+                                     Mi_SQL = Mi_SQL & " AND Adm_Asistencias_Registro_Checadores.Fecha='" & Format(Fecha, "MM/dd/yyyy") & "'"
+                                     Mi_SQL = Mi_SQL & " AND Adm_Asistencias_Registro_Checadores.Hora<'1899-12-30 23:59:59.000'"       'Debe ser menor de las 12 hrs. del día siguiente para cerrar el ciclo de un día
+                                     Mi_SQL = Mi_SQL & " AND Adm_Asistencias_Registro_Checadores.No_Tarjeta='" & .rdoColumns("No_Tarjeta") & "'"
+                                     Mi_SQL = Mi_SQL & " AND Cat_Turnos.Horas_Turno<0"
+                                     Mi_SQL = Mi_SQL & " ORDER BY Adm_Asistencias_Registro_Checadores.Fecha,Adm_Asistencias_Registro_Checadores.No_Tarjeta,Adm_Asistencias_Registro_Checadores.Hora desc"
+                                     Set Rs_Consulta_Checada = Conectar_Ayudante.Recordset_Consultar(Mi_SQL)
+                                     If Not Rs_Consulta_Checada.EOF Then
+                                         If Hora_Entrada = "0" Then 'Si no tuvo hora de entrada le asigna su entrada coo su salida y no le calcula tiempo extra
+                                             Hora_Entrada = Rs_Consulta_Checada.rdoColumns("Hora")
+                                         End If
+                                         
+                                         Hora_Salida = CDate(Rs_Consulta_Checada.rdoColumns("Hora"))
+                                         Hora_Salida_Auxiliar = Rs_Consulta_Checada.rdoColumns("Hora")
+                                     End If
+                                     Rs_Consulta_Checada.Close
+                                           
+                                End If
+                                
+                               
+                              
+                                      
+                            End If
+                            
+                            
+    '                        '   se calculan los nuevos totales
+    '                        If (DateDiff("n", Hora_Salida, Hora_Entrada) / 60) > 0 Then
+    '                            Hora_Real = DateDiff("n", Format(Hora_Salida, "HH:mm:ss"), Format(Hora_Entrada, "HH:mm:ss")) / 60
+    '
+    '                            Dim x As Integer
+    '
+    '                            'Format(Datos(1), "MM/dd/yyyy")
+    '                            x = DateDiff("h", Format(Hora_Salida, "HH:mm:ss"), Format(Hora_Entrada, "HH:mm:ss"))
+    '
+    '                        Else
+    '                            Hora_Real = 24 + (DateDiff("n", Hora_Salida, Hora_Entrada) / 60)
+    '                        End If
+                                   
+                                   
+                        Else    'Si no encuentra día de la semana busca en el general
+                            Rs_Consulta_Informacion_Turnos.Close
+                            Mi_SQL = "SELECT CE.Turno_ID,CT.Hora_Inicio,CT.Hora_Termino,CT.Comida_Inicio,CT.Comida_Termino,CT.Horas_Turno,CT.Horas_Comida,CT.Nombre"
+                            Mi_SQL = Mi_SQL & " FROM Cat_Empleados CE,Cat_Turnos CT"
+                            Mi_SQL = Mi_SQL & " WHERE CE.Turno_ID=CT.Turno_ID"
+                            Mi_SQL = Mi_SQL & " AND CE.Empleado_ID='" & .rdoColumns("Empleado_ID") & "'"
+                            Mi_SQL = Mi_SQL & " AND NOT EXISTS ("
+                            Mi_SQL = Mi_SQL & "     SELECT Roles_Calendarios.No_Tarjeta"
+                            Mi_SQL = Mi_SQL & "     FROM ("
+                            Mi_SQL = Mi_SQL & "         SELECT Cat_Calendarios_Turnos_Roles.No_Tarjeta"
+    '                        Mi_SQL = Mi_SQL & "             ,DATEADD(DAY, dbo.Obtener_Numero_Dia_Semana(Cat_Calendarios_Turnos_Detalles.Dia_Semana) - 1, DATEADD(WEEK, Cat_Calendarios_Turnos_Detalles.Semana - 1, CAST(YEAR(Cat_Calendarios_Turnos.Fecha_Inicio) AS VARCHAR) + '0101')) Fecha_Calculada"
+                            Mi_SQL = Mi_SQL & "         From Cat_Calendarios_Turnos"
+                            Mi_SQL = Mi_SQL & "             ,Cat_Calendarios_Turnos_Detalles"
+                            Mi_SQL = Mi_SQL & "             ,Cat_Calendarios_Turnos_Roles"
+                            Mi_SQL = Mi_SQL & "         WHERE Cat_Calendarios_Turnos_Roles.No_Tarjeta = CE.No_Tarjeta"
+                            Mi_SQL = Mi_SQL & "             AND Cat_Calendarios_Turnos.Calendario_Turno_ID = Cat_Calendarios_Turnos_Detalles.Calendario_Turno_ID"
+                            Mi_SQL = Mi_SQL & "             AND Cat_Calendarios_Turnos_Detalles.Estatus <> 'ELIMINADO'"
+                            Mi_SQL = Mi_SQL & "             AND Cat_Calendarios_Turnos_Detalles.Calendario_Turno_ID = Cat_Calendarios_Turnos_Roles.Calendario_Turno_ID"
+                            Mi_SQL = Mi_SQL & "             AND Cat_Calendarios_Turnos_Detalles.Calendario_Turno_Detalle_ID = Cat_Calendarios_Turnos_Roles.Calendario_Turno_Detalle_ID"
+                            Mi_SQL = Mi_SQL & "             AND DATEADD(DAY, dbo.Obtener_Numero_Dia_Semana(Cat_Calendarios_Turnos_Detalles.Dia_Semana) - 1, DATEADD(WEEK, Cat_Calendarios_Turnos_Detalles.Semana - 1, CAST(YEAR(Cat_Calendarios_Turnos.Fecha_Inicio) AS VARCHAR) + '0101')) = '" & Format(Fecha, "YYYYMMDD") & "'"
+    '                        Mi_SQL = Mi_SQL & "             AND (Cat_Calendarios_Turnos_Detalles.Hora_Termino - Cat_Calendarios_Turnos_Detalles.Hora_Inicio) >=0"
+                            Mi_SQL = Mi_SQL & "         ) Roles_Calendarios"
+    '                        Mi_SQL = Mi_SQL & "     WHERE Roles_Calendarios.No_Tarjeta = CE.No_Tarjeta"
+    '                        Mi_SQL = Mi_SQL & "     AND Roles_Calendarios.Fecha_Calculada = '" & Format(Fecha, "YYYYMMDD") & "'"
+                            Mi_SQL = Mi_SQL & " )"
                             Set Rs_Consulta_Informacion_Turnos = Conectar_Ayudante.Recordset_Consultar(Mi_SQL)
                             If Not Rs_Consulta_Informacion_Turnos.EOF Then
-                                Calendario_Turno_ID = Rs_Consulta_Informacion_Turnos.rdoColumns("Calendario_Turno_ID")
-                                Calendario_Turno_Detalle_ID = Rs_Consulta_Informacion_Turnos.rdoColumns("Calendario_Turno_Detalle_ID")
-                                Nombre_Turno = Rs_Consulta_Informacion_Turnos.rdoColumns("Nombre_Turno")
+                                Turno_Empleado = Rs_Consulta_Informacion_Turnos.rdoColumns("Turno_ID")
+                                Nombre_Turno = Rs_Consulta_Informacion_Turnos.rdoColumns("Nombre")
                                 Hora_Inicio_Turno = Format(Rs_Consulta_Informacion_Turnos.rdoColumns("Hora_Inicio"), "HH:mm:ss")
                                 Hora_Termino_Turno = Format(Rs_Consulta_Informacion_Turnos.rdoColumns("Hora_Termino"), "HH:mm:ss")
                                 Hora_Comida_Inicio = Format(Rs_Consulta_Informacion_Turnos.rdoColumns("Comida_Inicio"), "HH:mm:ss")
@@ -1758,360 +1739,411 @@ On Error GoTo HANDLER:
                                 Horas_Turno = Rs_Consulta_Informacion_Turnos.rdoColumns("Horas_Turno")
                                 Horas_Laboradas_Turno = Horas_Turno
                                 Dia_Descanso = "NO"
+                            Else
+                                Mi_SQL = "SELECT Cat_Calendarios_Turnos.Calendario_Turno_ID"
+                                Mi_SQL = Mi_SQL & "     ,Cat_Calendarios_Turnos_Detalles.Calendario_Turno_Detalle_ID"
+                                Mi_SQL = Mi_SQL & "     ,Cat_Calendarios_Turnos_Roles.No_Tarjeta"
+                                Mi_SQL = Mi_SQL & "     ,Cat_Calendarios_Turnos_Detalles.Hora_Inicio"
+                                Mi_SQL = Mi_SQL & "     ,Cat_Calendarios_Turnos_Detalles.Hora_Termino"
+                                Mi_SQL = Mi_SQL & "     ,Cat_Calendarios_Turnos_Detalles.Comida_Inicio"
+                                Mi_SQL = Mi_SQL & "     ,Cat_Calendarios_Turnos_Detalles.Comida_Termino"
+                                Mi_SQL = Mi_SQL & "     ,CASE WHEN (Cat_Calendarios_Turnos_Detalles.Hora_Termino - Cat_Calendarios_Turnos_Detalles.Hora_Inicio) >= 0 THEN (Cat_Calendarios_Turnos_Detalles.Hora_Termino - Cat_Calendarios_Turnos_Detalles.Hora_Inicio) ELSE (Cat_Calendarios_Turnos_Detalles.Hora_Inicio - Cat_Calendarios_Turnos_Detalles.Hora_Termino) END AS Horas_Turno"
+                                Mi_SQL = Mi_SQL & "     ,CASE WHEN (Cat_Calendarios_Turnos_Detalles.Comida_Termino - Cat_Calendarios_Turnos_Detalles.Comida_Inicio) >=0 THEN (Cat_Calendarios_Turnos_Detalles.Comida_Termino - Cat_Calendarios_Turnos_Detalles.Comida_Inicio) ELSE (Cat_Calendarios_Turnos_Detalles.Comida_Inicio - Cat_Calendarios_Turnos_Detalles.Comida_Termino) END AS Horas_Comida"
+                                Mi_SQL = Mi_SQL & "     ,Cat_Calendarios_Turnos_Detalles.Nombre_Turno"
+                                Mi_SQL = Mi_SQL & " FROM Cat_Calendarios_Turnos"
+                                Mi_SQL = Mi_SQL & "     ,Cat_Calendarios_Turnos_Detalles"
+                                Mi_SQL = Mi_SQL & "     ,Cat_Calendarios_Turnos_Roles"
+                                Mi_SQL = Mi_SQL & "     ,Cat_Empleados"
+                                Mi_SQL = Mi_SQL & " WHERE Cat_Empleados.Empleado_ID = '" & .rdoColumns("Empleado_ID") & "'"
+                                Mi_SQL = Mi_SQL & "     AND Cat_Calendarios_Turnos_Roles.No_Tarjeta = Cat_Empleados.No_Tarjeta"
+                                Mi_SQL = Mi_SQL & "     AND DATEADD(DAY, dbo.Obtener_Numero_Dia_Semana(Cat_Calendarios_Turnos_Detalles.Dia_Semana) - 1, DATEADD(WEEK, Cat_Calendarios_Turnos_Detalles.Semana - 1, CAST(YEAR(Cat_Calendarios_Turnos.Fecha_Inicio) AS VARCHAR) + '0101')) = '" & Format(Fecha, "YYYYMMDD") & "'"
+                                Mi_SQL = Mi_SQL & "     AND Cat_Calendarios_Turnos_Detalles.Estatus <> 'ELIMINADO'"
+                                Mi_SQL = Mi_SQL & "     AND Cat_Calendarios_Turnos.Calendario_Turno_ID = Cat_Calendarios_Turnos_Detalles.Calendario_Turno_ID"
+                                Mi_SQL = Mi_SQL & "     AND Cat_Calendarios_Turnos_Detalles.Calendario_Turno_ID = Cat_Calendarios_Turnos_Roles.Calendario_Turno_ID"
+                                Mi_SQL = Mi_SQL & "     AND Cat_Calendarios_Turnos_Detalles.Calendario_Turno_Detalle_ID = Cat_Calendarios_Turnos_Roles.Calendario_Turno_Detalle_ID"
+                                Set Rs_Consulta_Informacion_Turnos = Conectar_Ayudante.Recordset_Consultar(Mi_SQL)
+                                If Not Rs_Consulta_Informacion_Turnos.EOF Then
+                                    Calendario_Turno_ID = Rs_Consulta_Informacion_Turnos.rdoColumns("Calendario_Turno_ID")
+                                    Calendario_Turno_Detalle_ID = Rs_Consulta_Informacion_Turnos.rdoColumns("Calendario_Turno_Detalle_ID")
+                                    Nombre_Turno = Rs_Consulta_Informacion_Turnos.rdoColumns("Nombre_Turno")
+                                    Hora_Inicio_Turno = Format(Rs_Consulta_Informacion_Turnos.rdoColumns("Hora_Inicio"), "HH:mm:ss")
+                                    Hora_Termino_Turno = Format(Rs_Consulta_Informacion_Turnos.rdoColumns("Hora_Termino"), "HH:mm:ss")
+                                    Hora_Comida_Inicio = Format(Rs_Consulta_Informacion_Turnos.rdoColumns("Comida_Inicio"), "HH:mm:ss")
+                                    Hora_Comida_Termino = Format(Rs_Consulta_Informacion_Turnos.rdoColumns("Comida_Termino"), "HH:mm:ss")
+                                    Horas_Turno = Rs_Consulta_Informacion_Turnos.rdoColumns("Horas_Turno")
+                                    Horas_Laboradas_Turno = Horas_Turno
+                                    Dia_Descanso = "NO"
+                                End If
                             End If
                         End If
-                    End If
-                    Rs_Consulta_Informacion_Turnos.Close
-                    Set Rs_Consulta_Informacion_Turnos = Nothing
-                    Me.Refresh
-                    Hora_Real = 0
-                    Hora_Real_Extra = 0
-                    If Simbologia = "A" Then
-                        If DateDiff("n", Format(Hora_Inicio_Turno, "HH:mm:ss"), Format(Hora_Entrada_Calculo, "HH:mm:ss")) <= 0 Then
-                            Hora_Entrada_Calculo = Hora_Inicio_Turno
-                        End If
-                        'Valida si el horario de salida es un día posterior para evitar horas negativas
-                        If DateDiff("n", Hora_Inicio_Turno, Hora_Termino_Turno) > 0 Then
-                            If Hora_Entrada <> "01/01/1900" Then    'Valida si tuvo hora de entrada
-                                Hora_Real = (DateDiff("n", Format(Hora_Entrada, "HH:mm:ss"), Format(Hora_Salida, "HH:mm:ss"))) / 60
-'                                If DateDiff("n", Format(Hora_Inicio_Turno, "HH:mm:ss"), Format(Hora_Entrada_Calculo, "HH:mm:ss")) <= 0 Then
-'                                    Hora_Real_Extra = (DateDiff("n", Format(Hora_Inicio_Turno, "HH:mm:ss"), Format(Hora_Salida, "HH:mm:ss"))) / 60
-'                                Else
-                                    Hora_Real_Extra = (DateDiff("n", Format(Hora_Entrada, "HH:mm:ss"), Format(Hora_Salida, "HH:mm:ss"))) / 60
-'                                End If
+                        Rs_Consulta_Informacion_Turnos.Close
+                        Set Rs_Consulta_Informacion_Turnos = Nothing
+                        Me.Refresh
+                        Hora_Real = 0
+                        Hora_Real_Extra = 0
+                        If Simbologia = "A" Then
+                            If DateDiff("n", Format(Hora_Inicio_Turno, "HH:mm:ss"), Format(Hora_Entrada_Calculo, "HH:mm:ss")) <= 0 Then
+                                Hora_Entrada_Calculo = Hora_Inicio_Turno
                             End If
-                            Horas_Turno = Abs(DateDiff("n", Format(Hora_Termino_Turno, "HH:mm:ss"), Format(Hora_Inicio_Turno, "HH:mm:ss"))) / 60
-                        Else
-                            'Valida si salió el mismo día que entró para el segundo turno
-                            If DateDiff("n", Hora_Entrada, Hora_Salida) > 0 Then
+                            'Valida si el horario de salida es un día posterior para evitar horas negativas
+                            If DateDiff("n", Hora_Inicio_Turno, Hora_Termino_Turno) > 0 Then
                                 If Hora_Entrada <> "01/01/1900" Then    'Valida si tuvo hora de entrada
                                     Hora_Real = (DateDiff("n", Format(Hora_Entrada, "HH:mm:ss"), Format(Hora_Salida, "HH:mm:ss"))) / 60
-'                                    If DateDiff("n", Format(Hora_Inicio_Turno, "HH:mm:ss"), Format(Hora_Entrada_Calculo, "HH:mm:ss")) <= 0 Then
-'                                        Hora_Real_Extra = (DateDiff("n", Format(Hora_Inicio_Turno, "HH:mm:ss"), Format(Hora_Salida, "HH:mm:ss"))) / 60
-'                                    Else
+    '                                If DateDiff("n", Format(Hora_Inicio_Turno, "HH:mm:ss"), Format(Hora_Entrada_Calculo, "HH:mm:ss")) <= 0 Then
+    '                                    Hora_Real_Extra = (DateDiff("n", Format(Hora_Inicio_Turno, "HH:mm:ss"), Format(Hora_Salida, "HH:mm:ss"))) / 60
+    '                                Else
                                         Hora_Real_Extra = (DateDiff("n", Format(Hora_Entrada, "HH:mm:ss"), Format(Hora_Salida, "HH:mm:ss"))) / 60
-'                                    End If
+    '                                End If
                                 End If
                                 Horas_Turno = Abs(DateDiff("n", Format(Hora_Termino_Turno, "HH:mm:ss"), Format(Hora_Inicio_Turno, "HH:mm:ss"))) / 60
                             Else
-                                If Hora_Entrada <> "01/01/1900" Then    'Valida si tuvo hora de entrada
-                                
-                                    If (Bool_Proceso = True) Then
-                                        Hora_Real = DateDiff("n", Format(Hora_Entrada, "HH:mm:ss"), "23:59:59") / 60 + DateDiff("n", "00:00:00", Format(Hora_Salida, "HH:mm:ss")) / 60
-                                        Hora_Real_Extra = DateDiff("n", Format(Hora_Entrada, "HH:mm:ss"), "23:59:59") / 60 + DateDiff("n", "00:00:00", Format(Hora_Salida, "HH:mm:ss")) / 60
-                                    Else
+                                'Valida si salió el mismo día que entró para el segundo turno
+                                If DateDiff("n", Hora_Entrada, Hora_Salida) > 0 Then
+                                    If Hora_Entrada <> "01/01/1900" Then    'Valida si tuvo hora de entrada
                                         Hora_Real = (DateDiff("n", Format(Hora_Entrada, "HH:mm:ss"), Format(Hora_Salida, "HH:mm:ss"))) / 60
-                                        Hora_Real_Extra = (DateDiff("n", Format(Hora_Entrada, "HH:mm:ss"), Format(Hora_Salida, "HH:mm:ss"))) / 60
+    '                                    If DateDiff("n", Format(Hora_Inicio_Turno, "HH:mm:ss"), Format(Hora_Entrada_Calculo, "HH:mm:ss")) <= 0 Then
+    '                                        Hora_Real_Extra = (DateDiff("n", Format(Hora_Inicio_Turno, "HH:mm:ss"), Format(Hora_Salida, "HH:mm:ss"))) / 60
+    '                                    Else
+                                            Hora_Real_Extra = (DateDiff("n", Format(Hora_Entrada, "HH:mm:ss"), Format(Hora_Salida, "HH:mm:ss"))) / 60
+    '                                    End If
                                     End If
+                                    Horas_Turno = Abs(DateDiff("n", Format(Hora_Termino_Turno, "HH:mm:ss"), Format(Hora_Inicio_Turno, "HH:mm:ss"))) / 60
+                                Else
+                                    If Hora_Entrada <> "01/01/1900" Then    'Valida si tuvo hora de entrada
                                     
-                                
-                                    
-'                                    If DateDiff("n", Format(Hora_Inicio_Turno, "HH:mm:ss"), Format(Hora_Entrada_Calculo, "HH:mm:ss")) <= 0 Then
-'                                        Hora_Real_Extra = DateDiff("n", Format(Hora_Inicio_Turno, "HH:mm:ss"), "23:59:59") / 60 + DateDiff("n", "00:00:00", Format(Hora_Salida, "HH:mm:ss")) / 60
-'                                    Else
+                                        If (Bool_Proceso = True) Then
+                                            Hora_Real = DateDiff("n", Format(Hora_Entrada, "HH:mm:ss"), "23:59:59") / 60 + DateDiff("n", "00:00:00", Format(Hora_Salida, "HH:mm:ss")) / 60
+                                            Hora_Real_Extra = DateDiff("n", Format(Hora_Entrada, "HH:mm:ss"), "23:59:59") / 60 + DateDiff("n", "00:00:00", Format(Hora_Salida, "HH:mm:ss")) / 60
+                                        Else
+                                            Hora_Real = (DateDiff("n", Format(Hora_Entrada, "HH:mm:ss"), Format(Hora_Salida, "HH:mm:ss"))) / 60
+                                            Hora_Real_Extra = (DateDiff("n", Format(Hora_Entrada, "HH:mm:ss"), Format(Hora_Salida, "HH:mm:ss"))) / 60
+                                        End If
                                         
-'                                    End If
+                                    
+                                        
+    '                                    If DateDiff("n", Format(Hora_Inicio_Turno, "HH:mm:ss"), Format(Hora_Entrada_Calculo, "HH:mm:ss")) <= 0 Then
+    '                                        Hora_Real_Extra = DateDiff("n", Format(Hora_Inicio_Turno, "HH:mm:ss"), "23:59:59") / 60 + DateDiff("n", "00:00:00", Format(Hora_Salida, "HH:mm:ss")) / 60
+    '                                    Else
+                                            
+    '                                    End If
+                                    End If
+                                    Horas_Turno = DateDiff("n", Format(Hora_Inicio_Turno, "HH:mm:ss"), "23:59:59") / 60 + DateDiff("n", "00:00:00", Format(Hora_Termino_Turno, "HH:mm:ss")) / 60
                                 End If
-                                Horas_Turno = DateDiff("n", Format(Hora_Inicio_Turno, "HH:mm:ss"), "23:59:59") / 60 + DateDiff("n", "00:00:00", Format(Hora_Termino_Turno, "HH:mm:ss")) / 60
                             End If
-                        End If
-                        'Horas_Turno = Horas_Turno - (Abs(DateDiff("n", Format(Hora_Comida_Termino, "HH:mm:ss"), Format(Hora_Comida_Inicio, "HH:mm:ss"))) / 60)
-                        Horas_Laboradas = Format(Horas_Turno, "#0.0")
-                        'Valida si calcula retardo
-                        If PG_Aplica_Retardos = "1" Then
-                            If DateDiff("n", Format(Hora_Entrada, "HH:mm"), DateAdd("n", PG_Tolerancia_Retardos, Format(Hora_Inicio_Turno, "HH:mm"))) < 0 Then
-                                Permiso = "Retardo"
-                                Simbologia = "RE"
+                            'Horas_Turno = Horas_Turno - (Abs(DateDiff("n", Format(Hora_Comida_Termino, "HH:mm:ss"), Format(Hora_Comida_Inicio, "HH:mm:ss"))) / 60)
+                            Horas_Laboradas = Format(Horas_Turno, "#0.0")
+                            'Valida si calcula retardo
+                            If PG_Aplica_Retardos = "1" Then
+                                If DateDiff("n", Format(Hora_Entrada, "HH:mm"), DateAdd("n", PG_Tolerancia_Retardos, Format(Hora_Inicio_Turno, "HH:mm"))) < 0 Then
+                                    Permiso = "Retardo"
+                                    Simbologia = "RE"
+                                    SubSimbologia = ""
+                                End If
+                            End If
+                            If DateDiff("n", Hora_Termino_Turno, Hora_Salida) < 0 Then
+                                Permiso = "Registro de salida antes de horario"
+                                'Horas_Laboradas = Hora_Real
+                                Simbologia = "HI"
                                 SubSimbologia = ""
                             End If
-                        End If
-                        If DateDiff("n", Hora_Termino_Turno, Hora_Salida) < 0 Then
-                            Permiso = "Registro de salida antes de horario"
-                            'Horas_Laboradas = Hora_Real
-                            Simbologia = "HI"
-                            SubSimbologia = ""
-                        End If
-                        'If DateDiff("n", Hora_Termino_Turno, Hora_Salida) > 0 And Empresa_Sindicalizada = True Then
-                        If Empresa_Sindicalizada = True Then
-                            If Hora_Real >= (DateDiff("n", Hora_Inicio_Turno, Hora_Termino_Turno) / 60) Then
-                                Horas_Turno = Abs(DateDiff("n", Format(Hora_Termino_Turno, "HH:mm:ss"), Format(Hora_Inicio_Turno, "HH:mm:ss"))) / 60
-                                'Horas_Turno = Horas_Turno - (Abs(DateDiff("n", Format(Hora_Comida_Termino, "HH:mm:ss"), Format(Hora_Comida_Inicio, "HH:mm:ss"))) / 60)
-                                Horas_Laboradas = Horas_Turno
-                            Else
-                                Horas_Laboradas = Hora_Real
-                            End If
-                        End If
-                    End If
-                    Me.Refresh
-                    'Consulta los movimientos del empleado para la fecha
-                    Mi_SQL = "SELECT ISNULL(No_Movimiento,'') as No_Movimiento, "
-                    Mi_SQL = Mi_SQL & " ISNULL(Tipo_Incidencia,'') AS Tipo_Incidencia,"
-                    Mi_SQL = Mi_SQL & " Empleado_ID, Motivo, Simbologia, "
-                    Mi_SQL = Mi_SQL & " SubSimbologia, Horas_Acuerdo"
-                    Mi_SQL = Mi_SQL & " FROM Adm_Movimientos_Asistencias "
-                    Mi_SQL = Mi_SQL & " WHERE Empleado_ID = '" & .rdoColumns("Empleado_ID") & "'"
-                    Mi_SQL = Mi_SQL & " AND (" & Par_Fecha & Format(Fecha, "MM/dd/yyyy") & Par_Fecha
-                    Mi_SQL = Mi_SQL & " BETWEEN Fecha_Inicio AND Fecha_Termino)"
-                    Mi_SQL = Mi_SQL & " AND Estatus='A'"
-                    Mi_SQL = Mi_SQL & " AND Tipo_Incidencia='E'"
-                    Set Rs_Consulta_Adm_Permisos = Conectar_Ayudante.Recordset_Consultar(Mi_SQL)
-                    If Not Rs_Consulta_Adm_Permisos.EOF Then
-                        Permiso = Rs_Consulta_Adm_Permisos.rdoColumns("Motivo")
-                        Referencia = Trim(Rs_Consulta_Adm_Permisos.rdoColumns("No_Movimiento"))
-                        Simbologia = Rs_Consulta_Adm_Permisos.rdoColumns("Simbologia")
-                        SubSimbologia = Rs_Consulta_Adm_Permisos.rdoColumns("SubSimbologia")
-                        Tipo_Incidencia = Rs_Consulta_Adm_Permisos.rdoColumns("Tipo_Incidencia")
-                        If Not IsNull(Rs_Consulta_Adm_Permisos.rdoColumns("Horas_Acuerdo")) Then
-                            If Val(Rs_Consulta_Adm_Permisos.rdoColumns("Horas_Acuerdo")) > 0 Then
-                                Horas_Laboradas = Val(Rs_Consulta_Adm_Permisos.rdoColumns("Horas_Acuerdo"))
-                            End If
-                        End If
-                    End If
-                    Rs_Consulta_Adm_Permisos.Close
-                    Me.Refresh
-                    'Valida que el dia festivo
-                    Mi_SQL = "SELECT Fecha,Comentarios FROM Cat_Dias_No_Laborales"
-                    Mi_SQL = Mi_SQL & " WHERE Fecha='" & Format(Fecha, "MM/dd/yyyy") & "'"
-                    Set Rs_Consulta_Dia_Feriado = Conectar_Ayudante.Recordset_Consultar(Mi_SQL)
-                    If Not Rs_Consulta_Dia_Feriado.EOF Then
-                        Permiso = Rs_Consulta_Dia_Feriado.rdoColumns("Comentarios")
-                        Simbologia = "FE"
-                        SubSimbologia = ""
-                        'Valida si el horario de salida es un día posterior para evitar horas negativas
-                        If DateDiff("n", Hora_Inicio_Turno, Hora_Termino_Turno) > 0 Then
-                            Horas_Turno = Abs(DateDiff("n", Format(Hora_Termino_Turno, "HH:mm:ss"), Format(Hora_Inicio_Turno, "HH:mm:ss"))) / 60
-                        Else
-                            Horas_Turno = DateDiff("n", Format(Hora_Inicio_Turno, "HH:mm:ss"), "23:59:59") / 60 + DateDiff("n", "00:00:00", Format(Hora_Termino_Turno, "HH:mm:ss")) / 60
-                        End If
-                        Horas_Laboradas = Horas_Turno
-                    End If
-                    Set Rs_Consulta_Dia_Feriado = Nothing
-                    'Si fue su dia de descanso lo pone como trabajado
-                    If Dia_Descanso = "SI" And Simbologia = "F" Then
-'                        Permiso = "DESCANSO"
-'                        Simbologia = "DE"
-'                        SubSimbologia = ""
-'                        Horas_Turno = Abs(DateDiff("n", Format(Hora_Termino_Turno, "HH:mm:ss"), Format(Hora_Inicio_Turno, "HH:mm:ss"))) / 60
-'                        Horas_Turno = Horas_Turno - (Abs(DateDiff("n", Format(Hora_Comida_Termino, "HH:mm:ss"), Format(Hora_Comida_Inicio, "HH:mm:ss"))) / 60)
-'                        Horas_Laboradas = (DateDiff("n", Hora_Inicio_Turno, Hora_Termino_Turno) / 60)
-'                        If Hora_Real - Fix(Hora_Real) < 0.5 Then
-'                            Horas_Extra = Fix(Hora_Real)
-'                        Else
-'                            Horas_Extra = Fix(Hora_Real) + 0.5
-'                        End If
-                        Permiso = ""
-                        Simbologia = ""
-                        SubSimbologia = ""
-                        Horas_Turno = Abs(DateDiff("n", Format(Hora_Termino_Turno, "HH:mm:ss"), Format(Hora_Inicio_Turno, "HH:mm:ss"))) / 60
-                        Horas_Turno = Horas_Turno - (Abs(DateDiff("n", Format(Hora_Comida_Termino, "HH:mm:ss"), Format(Hora_Comida_Inicio, "HH:mm:ss"))) / 60)
-                        Horas_Laboradas = (DateDiff("n", Hora_Inicio_Turno, Hora_Termino_Turno) / 60)
-                        If Hora_Real - Fix(Hora_Real) < 0.5 Then
-                            Horas_Extra = Fix(Hora_Real)
-                        Else
-                            Horas_Extra = Fix(Hora_Real) + 0.5
-                        End If
-                    End If
-                    'Valida las horas extra trabajadas
-                    Horas_Extra_Adicionales = 0
-                    Horas_Extra = 0
-                    If PG_Calcula_Horas_Extra = "1" Then
-                        If Hora_Salida <> "" And Hora_Salida <> "01/01/1900" And Hora_Salida <> "0" Then
-                            If Horas_Extra_Paga > 0 Then
-                                'If Format(Hora_Real - Horas_Laboradas, "#0") >= Horas_Extra_Paga Then
-                                If Fix((Hora_Real_Extra - Horas_Laboradas) + 0.25) >= Horas_Extra_Paga Then
-                                    'Horas_Extra_Adicionales = Format(Hora_Real - Horas_Laboradas, "#0") - Horas_Extra_Paga
-                                    Horas_Extra_Adicionales = Fix(Hora_Real_Extra - Horas_Laboradas + 0.25) - Horas_Extra_Paga
-                                    'Horas_Extra = Val(Format(Horas_Extra_Adicionales, "#0")) + Val(Format(Horas_Extra_Definidas, "#0.00"))
-                                    Horas_Extra = Val(Fix(Horas_Extra_Adicionales)) + Val(Format(Horas_Extra_Definidas, "#0.00"))
+                            'If DateDiff("n", Hora_Termino_Turno, Hora_Salida) > 0 And Empresa_Sindicalizada = True Then
+                            If Empresa_Sindicalizada = True Then
+                                If Hora_Real >= (DateDiff("n", Hora_Inicio_Turno, Hora_Termino_Turno) / 60) Then
+                                    Horas_Turno = Abs(DateDiff("n", Format(Hora_Termino_Turno, "HH:mm:ss"), Format(Hora_Inicio_Turno, "HH:mm:ss"))) / 60
+                                    'Horas_Turno = Horas_Turno - (Abs(DateDiff("n", Format(Hora_Comida_Termino, "HH:mm:ss"), Format(Hora_Comida_Inicio, "HH:mm:ss"))) / 60)
+                                    Horas_Laboradas = Horas_Turno
                                 Else
-                                    Horas_Extra_Adicionales = Fix(Hora_Real_Extra - Horas_Laboradas + 0.25)
-                                    Horas_Extra = Horas_Extra_Adicionales
+                                    Horas_Laboradas = Hora_Real
                                 End If
-                            Else
-                                'Horas_Extra_Adicionales = Hora_Real - Horas_Laboradas
-                                Horas_Extra_Adicionales = Fix(Hora_Real_Extra - Horas_Laboradas + 0.25)
-                                Horas_Extra = Val(Format(Horas_Extra_Adicionales, "#0"))
                             End If
-                            If Horas_Extra < 0 Then Horas_Extra = 0
                         End If
-                    End If
-                    Me.Refresh
-                    Partida = Partida + 1
-                    'Si no tiene checada de algún turno (entrada/salida) le asigan las horas trabajadas del turno sin horas extra
-                    If Hora_Real < 0 Then Hora_Real = 0
-                    If Hora_Entrada <> "01/01/1900" And Hora_Salida = "01/01/1900" Then
-                        Hora_Real = Horas_Laboradas
-                    End If
-                    
-                    
-                    
-                    'Agrega el dato en el grid
-                    Grid_Validacion_Horas_Trabajo_Lista.AddItem Referencia _
-                        & Chr(9) & .rdoColumns("Empleado_ID") _
-                        & Chr(9) & .rdoColumns("No_Tarjeta") _
-                        & Chr(9) & .rdoColumns("Departamento") _
-                        & Chr(9) & .rdoColumns("Nombre") _
-                        & Chr(9) & Nombre_Turno _
-                        & Chr(9) & Format(Hora_Entrada, "HH:mm:ss") _
-                        & Chr(9) & Format(Hora_Comida_Entrada, "HH:mm:ss") _
-                        & Chr(9) & Format(Hora_Comida_Salida, "HH:mm:ss") _
-                        & Chr(9) & Format(Hora_Salida, "HH:mm:ss") _
-                        & Chr(9) & Format(Hora_Real, "#0.00") _
-                        & Chr(9) & Format(Horas_Laboradas, "#0.00") _
-                        & Chr(9) & Horas_Extra _
-                        & Chr(9) & Justificacion_Horas_Extra _
-                        & Chr(9) & Horas_Extra _
-                        & Chr(9) & Permiso _
-                        & Chr(9) & Simbologia _
-                        & Chr(9) & SubSimbologia _
-                        & Chr(9) & No_Movimiento _
-                        & Chr(9) & "NO" _
-                        & Chr(9) & Referencia _
-                        & Chr(9) & Tipo_Incidencia _
-                        & Chr(9) & Horas_Laboradas_Turno _
-                        & Chr(9) & Turno_Empleado _
-                        & Chr(9) & "" & Chr(9) & Calendario_Turno_ID & Chr(9) & Calendario_Turno_Detalle_ID
-                    Print #1, ""
-                    Print #2, .rdoColumns("No_Tarjeta"); _
-                        "|"; .rdoColumns("Departamento"); _
-                        "|"; .rdoColumns("Nombre"); _
-                        "|"; Nombre_Supervisor; _
-                        "|"; Format(Hora_Entrada, "HH:mm:ss"); _
-                        "|"; Format(Hora_Comida_Entrada, "HH:mm:ss"); _
-                        "|"; Format(Hora_Comida_Salida, "HH:mm:ss"); _
-                        "|"; Format(Hora_Salida, "HH:mm:ss"); _
-                        "|"; Format(Hora_Real, "#0.00"); _
-                        "|"; Format(Horas_Laboradas, "#0.00"); _
-                        "|"; Horas_Extra; _
-                        "|"; Justificacion_Horas_Extra; _
-                        "|"; Horas_Extra; _
-                        "|"; Turno_Empleado; _
-                        "|"; Permiso; _
-                        "|"; Simbologia; _
-                        "|"; No_Movimiento; _
-                        "|"; .rdoColumns("Departamento"); _
-                        "|"; .rdoColumns("Clave"); _
-                        "|"; .rdoColumns("Tipo_Empleado"); _
-                        "|"; .rdoColumns("Cedula_Identidad_Ciudadana"); _
-                        "|"; Ruta_Transporte
-                    Me.Refresh
-                    'Realiza la validacion de inconsistencias
-                    With Grid_Validacion_Horas_Trabajo_Lista
-                        Select Case .TextMatrix(.Rows - 1, 12)
-                            Case "HI":
-                                Colorear_Fila = True
-                            Case "VN", "FE":
-                                If Val(.TextMatrix(.Rows - 1, 7)) <> Horas_Turno Then
-                                    Colorear_Fila = True
+                        Me.Refresh
+                        'Consulta los movimientos del empleado para la fecha
+                        Mi_SQL = "SELECT ISNULL(No_Movimiento,'') as No_Movimiento, "
+                        Mi_SQL = Mi_SQL & " ISNULL(Tipo_Incidencia,'') AS Tipo_Incidencia,"
+                        Mi_SQL = Mi_SQL & " Empleado_ID, Motivo, Simbologia, "
+                        Mi_SQL = Mi_SQL & " SubSimbologia, Horas_Acuerdo"
+                        Mi_SQL = Mi_SQL & " FROM Adm_Movimientos_Asistencias "
+                        Mi_SQL = Mi_SQL & " WHERE Empleado_ID = '" & .rdoColumns("Empleado_ID") & "'"
+                        Mi_SQL = Mi_SQL & " AND (" & Par_Fecha & Format(Fecha, "MM/dd/yyyy") & Par_Fecha
+                        Mi_SQL = Mi_SQL & " BETWEEN Fecha_Inicio AND Fecha_Termino)"
+                        Mi_SQL = Mi_SQL & " AND Estatus='A'"
+                        Mi_SQL = Mi_SQL & " AND Tipo_Incidencia='E'"
+                        Set Rs_Consulta_Adm_Permisos = Conectar_Ayudante.Recordset_Consultar(Mi_SQL)
+                        If Not Rs_Consulta_Adm_Permisos.EOF Then
+                            Permiso = Rs_Consulta_Adm_Permisos.rdoColumns("Motivo")
+                            Referencia = Trim(Rs_Consulta_Adm_Permisos.rdoColumns("No_Movimiento"))
+                            Simbologia = Rs_Consulta_Adm_Permisos.rdoColumns("Simbologia")
+                            SubSimbologia = Rs_Consulta_Adm_Permisos.rdoColumns("SubSimbologia")
+                            Tipo_Incidencia = Rs_Consulta_Adm_Permisos.rdoColumns("Tipo_Incidencia")
+                            If Not IsNull(Rs_Consulta_Adm_Permisos.rdoColumns("Horas_Acuerdo")) Then
+                                If Val(Rs_Consulta_Adm_Permisos.rdoColumns("Horas_Acuerdo")) > 0 Then
+                                    Horas_Laboradas = Val(Rs_Consulta_Adm_Permisos.rdoColumns("Horas_Acuerdo"))
                                 End If
-                            Case "PE":
-                                If Val(.TextMatrix(.Rows - 1, 7)) = 0 Then
-                                    Colorear_Fila = True
+                            End If
+                        End If
+                        Rs_Consulta_Adm_Permisos.Close
+                        Me.Refresh
+                        'Valida que el dia festivo
+                        Mi_SQL = "SELECT Fecha,Comentarios FROM Cat_Dias_No_Laborales"
+                        Mi_SQL = Mi_SQL & " WHERE Fecha='" & Format(Fecha, "MM/dd/yyyy") & "'"
+                        Set Rs_Consulta_Dia_Feriado = Conectar_Ayudante.Recordset_Consultar(Mi_SQL)
+                        If Not Rs_Consulta_Dia_Feriado.EOF Then
+                            Permiso = Rs_Consulta_Dia_Feriado.rdoColumns("Comentarios")
+                            Simbologia = "FE"
+                            SubSimbologia = ""
+                            'Valida si el horario de salida es un día posterior para evitar horas negativas
+                            If DateDiff("n", Hora_Inicio_Turno, Hora_Termino_Turno) > 0 Then
+                                Horas_Turno = Abs(DateDiff("n", Format(Hora_Termino_Turno, "HH:mm:ss"), Format(Hora_Inicio_Turno, "HH:mm:ss"))) / 60
+                            Else
+                                Horas_Turno = DateDiff("n", Format(Hora_Inicio_Turno, "HH:mm:ss"), "23:59:59") / 60 + DateDiff("n", "00:00:00", Format(Hora_Termino_Turno, "HH:mm:ss")) / 60
+                            End If
+                            Horas_Laboradas = Horas_Turno
+                        End If
+                        Set Rs_Consulta_Dia_Feriado = Nothing
+                        'Si fue su dia de descanso lo pone como trabajado
+                        If Dia_Descanso = "SI" And Simbologia = "F" Then
+    '                        Permiso = "DESCANSO"
+    '                        Simbologia = "DE"
+    '                        SubSimbologia = ""
+    '                        Horas_Turno = Abs(DateDiff("n", Format(Hora_Termino_Turno, "HH:mm:ss"), Format(Hora_Inicio_Turno, "HH:mm:ss"))) / 60
+    '                        Horas_Turno = Horas_Turno - (Abs(DateDiff("n", Format(Hora_Comida_Termino, "HH:mm:ss"), Format(Hora_Comida_Inicio, "HH:mm:ss"))) / 60)
+    '                        Horas_Laboradas = (DateDiff("n", Hora_Inicio_Turno, Hora_Termino_Turno) / 60)
+    '                        If Hora_Real - Fix(Hora_Real) < 0.5 Then
+    '                            Horas_Extra = Fix(Hora_Real)
+    '                        Else
+    '                            Horas_Extra = Fix(Hora_Real) + 0.5
+    '                        End If
+                            Permiso = ""
+                            Simbologia = ""
+                            SubSimbologia = ""
+                            Horas_Turno = Abs(DateDiff("n", Format(Hora_Termino_Turno, "HH:mm:ss"), Format(Hora_Inicio_Turno, "HH:mm:ss"))) / 60
+                            Horas_Turno = Horas_Turno - (Abs(DateDiff("n", Format(Hora_Comida_Termino, "HH:mm:ss"), Format(Hora_Comida_Inicio, "HH:mm:ss"))) / 60)
+                            Horas_Laboradas = (DateDiff("n", Hora_Inicio_Turno, Hora_Termino_Turno) / 60)
+                            If Hora_Real - Fix(Hora_Real) < 0.5 Then
+                                Horas_Extra = Fix(Hora_Real)
+                            Else
+                                Horas_Extra = Fix(Hora_Real) + 0.5
+                            End If
+                        End If
+                        'Valida las horas extra trabajadas
+                        Horas_Extra_Adicionales = 0
+                        Horas_Extra = 0
+                        If PG_Calcula_Horas_Extra = "1" Then
+                            If Hora_Salida <> "" And Hora_Salida <> "01/01/1900" And Hora_Salida <> "0" Then
+                                If Horas_Extra_Paga > 0 Then
+                                    'If Format(Hora_Real - Horas_Laboradas, "#0") >= Horas_Extra_Paga Then
+                                    If Fix((Hora_Real_Extra - Horas_Laboradas) + 0.25) >= Horas_Extra_Paga Then
+                                        'Horas_Extra_Adicionales = Format(Hora_Real - Horas_Laboradas, "#0") - Horas_Extra_Paga
+                                        Horas_Extra_Adicionales = Fix(Hora_Real_Extra - Horas_Laboradas + 0.25) - Horas_Extra_Paga
+                                        'Horas_Extra = Val(Format(Horas_Extra_Adicionales, "#0")) + Val(Format(Horas_Extra_Definidas, "#0.00"))
+                                        Horas_Extra = Val(Fix(Horas_Extra_Adicionales)) + Val(Format(Horas_Extra_Definidas, "#0.00"))
+                                    Else
+                                        Horas_Extra_Adicionales = Fix(Hora_Real_Extra - Horas_Laboradas + 0.25)
+                                        Horas_Extra = Horas_Extra_Adicionales
+                                    End If
+                                Else
+                                    'Horas_Extra_Adicionales = Hora_Real - Horas_Laboradas
+                                    Horas_Extra_Adicionales = Fix(Hora_Real_Extra - Horas_Laboradas + 0.25)
+                                    Horas_Extra = Val(Format(Horas_Extra_Adicionales, "#0"))
                                 End If
-                            Case "II":
-                                Select Case .TextMatrix(.Rows - 1, 11)
-                                    Case "EG"
-                                        If Val(.TextMatrix(.Rows - 1, 7)) <> 0 Then
-                                            Colorear_Fila = True
-                                        End If
-                                    Case "MA"
-                                        If Val(.TextMatrix(.Rows - 1, 7)) <> 0 Then
-                                            Colorear_Fila = True
-                                        End If
-                                    Case "RT"
-                                        If Val(.TextMatrix(.Rows - 1, 7)) <> 0 Then
-                                            Colorear_Fila = True
-                                        End If
-                                End Select
-                            Case "ID"
-                                Select Case .TextMatrix(.Rows - 1, 11)
-                                    Case "VA"
-                                        If Val(.TextMatrix(.Rows - 1, 6)) <> 0 Then
-                                            Colorear_Fila = True
-                                        End If
-                                    Case "AL"
-                                        If Val(.TextMatrix(.Rows - 1, 7)) <> Horas_Turno Then
-                                            Colorear_Fila = True
-                                        End If
-                                    Case "DE"
-                                        If Val(.TextMatrix(.Rows - 1, 7)) <> Horas_Turno Then
-                                            Colorear_Fila = True
-                                        End If
-                                    Case "MO"
-                                        If Val(.TextMatrix(.Rows - 1, 7)) <> Horas_Turno Then
-                                            Colorear_Fila = True
-                                        End If
-                                End Select
-                            Case "D", "F"   'Descanso y falta injustificada
-                                If Val(.TextMatrix(.Rows - 1, 7)) <> 0 Then
-                                    Colorear_Fila = True
-                                End If
-                        End Select
-                        Manejo_Grid = False
-                        If Colorear_Fila = True Then
-                            .Col = 0
-                            For Columna = 3 To .Cols - 1
-                                .Col = Columna
-                                .Row = .Rows - 1
-                                .CellBackColor = &H80FFFF
-                            Next Columna
+                                If Horas_Extra < 0 Then Horas_Extra = 0
+                            End If
+                        End If
+                        Me.Refresh
+                        Partida = Partida + 1
+                        'Si no tiene checada de algún turno (entrada/salida) le asigan las horas trabajadas del turno sin horas extra
+                        If Hora_Real < 0 Then Hora_Real = 0
+                        If Hora_Entrada <> "01/01/1900" And Hora_Salida = "01/01/1900" Then
+                            Hora_Real = Horas_Laboradas
                         End If
                         
-                        'Colorea tiempos de trabajo excedidos de 14 hrs.
-                        If PG_Horas_Maximas_Turno > 0 Then
-                            If Val(.TextMatrix(.Rows - 1, 10)) > PG_Horas_Maximas_Turno Then
+                        
+                        
+                        'Agrega el dato en el grid
+                        Grid_Validacion_Horas_Trabajo_Lista.AddItem Referencia _
+                            & Chr(9) & .rdoColumns("Empleado_ID") _
+                            & Chr(9) & .rdoColumns("No_Tarjeta") _
+                            & Chr(9) & .rdoColumns("Departamento") _
+                            & Chr(9) & .rdoColumns("Nombre") _
+                            & Chr(9) & Nombre_Turno _
+                            & Chr(9) & Format(Hora_Entrada, "HH:mm:ss") _
+                            & Chr(9) & Format(Hora_Comida_Entrada, "HH:mm:ss") _
+                            & Chr(9) & Format(Hora_Comida_Salida, "HH:mm:ss") _
+                            & Chr(9) & Format(Hora_Salida, "HH:mm:ss") _
+                            & Chr(9) & Format(Hora_Real, "#0.00") _
+                            & Chr(9) & Format(Horas_Laboradas, "#0.00") _
+                            & Chr(9) & Horas_Extra _
+                            & Chr(9) & Justificacion_Horas_Extra _
+                            & Chr(9) & Horas_Extra _
+                            & Chr(9) & Permiso _
+                            & Chr(9) & Simbologia _
+                            & Chr(9) & SubSimbologia _
+                            & Chr(9) & No_Movimiento _
+                            & Chr(9) & "NO" _
+                            & Chr(9) & Referencia _
+                            & Chr(9) & Tipo_Incidencia _
+                            & Chr(9) & Horas_Laboradas_Turno _
+                            & Chr(9) & Turno_Empleado _
+                            & Chr(9) & "" & Chr(9) & Calendario_Turno_ID & Chr(9) & Calendario_Turno_Detalle_ID
+                        Print #1, ""
+                        Print #2, .rdoColumns("No_Tarjeta"); _
+                            "|"; .rdoColumns("Departamento"); _
+                            "|"; .rdoColumns("Nombre"); _
+                            "|"; Nombre_Supervisor; _
+                            "|"; Format(Hora_Entrada, "HH:mm:ss"); _
+                            "|"; Format(Hora_Comida_Entrada, "HH:mm:ss"); _
+                            "|"; Format(Hora_Comida_Salida, "HH:mm:ss"); _
+                            "|"; Format(Hora_Salida, "HH:mm:ss"); _
+                            "|"; Format(Hora_Real, "#0.00"); _
+                            "|"; Format(Horas_Laboradas, "#0.00"); _
+                            "|"; Horas_Extra; _
+                            "|"; Justificacion_Horas_Extra; _
+                            "|"; Horas_Extra; _
+                            "|"; Turno_Empleado; _
+                            "|"; Permiso; _
+                            "|"; Simbologia; _
+                            "|"; No_Movimiento; _
+                            "|"; .rdoColumns("Departamento"); _
+                            "|"; .rdoColumns("Clave"); _
+                            "|"; .rdoColumns("Tipo_Empleado"); _
+                            "|"; .rdoColumns("Cedula_Identidad_Ciudadana"); _
+                            "|"; Ruta_Transporte
+                        Me.Refresh
+                        'Realiza la validacion de inconsistencias
+                        With Grid_Validacion_Horas_Trabajo_Lista
+                            Select Case .TextMatrix(.Rows - 1, 12)
+                                Case "HI":
+                                    Colorear_Fila = True
+                                Case "VN", "FE":
+                                    If Val(.TextMatrix(.Rows - 1, 7)) <> Horas_Turno Then
+                                        Colorear_Fila = True
+                                    End If
+                                Case "PE":
+                                    If Val(.TextMatrix(.Rows - 1, 7)) = 0 Then
+                                        Colorear_Fila = True
+                                    End If
+                                Case "II":
+                                    Select Case .TextMatrix(.Rows - 1, 11)
+                                        Case "EG"
+                                            If Val(.TextMatrix(.Rows - 1, 7)) <> 0 Then
+                                                Colorear_Fila = True
+                                            End If
+                                        Case "MA"
+                                            If Val(.TextMatrix(.Rows - 1, 7)) <> 0 Then
+                                                Colorear_Fila = True
+                                            End If
+                                        Case "RT"
+                                            If Val(.TextMatrix(.Rows - 1, 7)) <> 0 Then
+                                                Colorear_Fila = True
+                                            End If
+                                    End Select
+                                Case "ID"
+                                    Select Case .TextMatrix(.Rows - 1, 11)
+                                        Case "VA"
+                                            If Val(.TextMatrix(.Rows - 1, 6)) <> 0 Then
+                                                Colorear_Fila = True
+                                            End If
+                                        Case "AL"
+                                            If Val(.TextMatrix(.Rows - 1, 7)) <> Horas_Turno Then
+                                                Colorear_Fila = True
+                                            End If
+                                        Case "DE"
+                                            If Val(.TextMatrix(.Rows - 1, 7)) <> Horas_Turno Then
+                                                Colorear_Fila = True
+                                            End If
+                                        Case "MO"
+                                            If Val(.TextMatrix(.Rows - 1, 7)) <> Horas_Turno Then
+                                                Colorear_Fila = True
+                                            End If
+                                    End Select
+                                Case "D", "F"   'Descanso y falta injustificada
+                                    If Val(.TextMatrix(.Rows - 1, 7)) <> 0 Then
+                                        Colorear_Fila = True
+                                    End If
+                            End Select
+                            Manejo_Grid = False
+                            If Colorear_Fila = True Then
                                 .Col = 0
                                 For Columna = 3 To .Cols - 1
                                     .Col = Columna
                                     .Row = .Rows - 1
-                                    .CellBackColor = &H80FF&
+                                    .CellBackColor = &H80FFFF
                                 Next Columna
                             End If
-                        End If
-                        'Colorea los registros sin hora de salida
-                        If Trim(.TextMatrix(.Rows - 1, 9)) = "00:00:00" Then
-                            .Col = 0
-                            For Columna = 3 To .Cols - 1
-                                .Col = Columna
-                                .Row = .Rows - 1
-                                .CellBackColor = &HFFFF00
-                            Next Columna
-                        End If
-                        
-                        Me.Refresh
-                        'Verfica si el empleado es temporal para revisar la finalizacion de contrato
-                        Mi_SQL = "SELECT Empleado_ID, Tipo_Contratacion, Fecha_Termino_Contrato"
-                        Mi_SQL = Mi_SQL & " FROM Cat_Empleados"
-                        Mi_SQL = Mi_SQL & " WHERE Empleado_ID = '" & .TextMatrix(.Rows - 1, 1) & "'"
-                        Set Rs_Consulta_Cat_Empleados = Conectar_Ayudante.Recordset_Consultar(Mi_SQL)
-                        If Not Rs_Consulta_Cat_Empleados.EOF Then
-                            If UCase(Rs_Consulta_Cat_Empleados.rdoColumns("Tipo_Contratacion")) = "EVENTUAL" Then
-                                If DateDiff("d", Now, Rs_Consulta_Cat_Empleados.rdoColumns("Fecha_Termino_Contrato")) <= Dias_Aviso_Contrato_Eventual And _
-                                    DateDiff("d", Now, Rs_Consulta_Cat_Empleados.rdoColumns("Fecha_Termino_Contrato")) > 0 Then
-                                    'If Colorear_Fila = True Then
-                                        .Col = 0
-                                        For Columna = 1 To .Cols - 1
-                                            .Col = Columna
-                                            .Row = .Rows - 1
-                                            .CellBackColor = &H8080FF
-                                        Next Columna
-                                    'End If
-                                End If
-                                If DateDiff("d", Now, Rs_Consulta_Cat_Empleados.rdoColumns("Fecha_Termino_Contrato")) <= 0 Then
-                                    'If Colorear_Fila = True Then
-                                        .Col = 0
-                                        For Columna = 1 To .Cols - 1
-                                            .Col = Columna
-                                            .Row = .Rows - 1
-                                            .CellBackColor = &HC0&
-                                        Next Columna
-                                    'End If
+                            
+                            'Colorea tiempos de trabajo excedidos de 14 hrs.
+                            If PG_Horas_Maximas_Turno > 0 Then
+                                If Val(.TextMatrix(.Rows - 1, 10)) > PG_Horas_Maximas_Turno Then
+                                    .Col = 0
+                                    For Columna = 3 To .Cols - 1
+                                        .Col = Columna
+                                        .Row = .Rows - 1
+                                        .CellBackColor = &H80FF&
+                                    Next Columna
                                 End If
                             End If
-                        End If
-                        Set Rs_Consulta_Cat_Empleados = Nothing
-                        Me.Refresh
-                    End With
+                            'Colorea los registros sin hora de salida
+                            If Trim(.TextMatrix(.Rows - 1, 9)) = "00:00:00" Then
+                                .Col = 0
+                                For Columna = 3 To .Cols - 1
+                                    .Col = Columna
+                                    .Row = .Rows - 1
+                                    .CellBackColor = &HFFFF00
+                                Next Columna
+                            End If
+                            
+                            Me.Refresh
+                            'Verfica si el empleado es temporal para revisar la finalizacion de contrato
+                            Mi_SQL = "SELECT Empleado_ID, Tipo_Contratacion, Fecha_Termino_Contrato"
+                            Mi_SQL = Mi_SQL & " FROM Cat_Empleados"
+                            Mi_SQL = Mi_SQL & " WHERE Empleado_ID = '" & .TextMatrix(.Rows - 1, 1) & "'"
+                            Set Rs_Consulta_Cat_Empleados = Conectar_Ayudante.Recordset_Consultar(Mi_SQL)
+                            If Not Rs_Consulta_Cat_Empleados.EOF Then
+                                If UCase(Rs_Consulta_Cat_Empleados.rdoColumns("Tipo_Contratacion")) = "EVENTUAL" Then
+                                    If DateDiff("d", Now, Rs_Consulta_Cat_Empleados.rdoColumns("Fecha_Termino_Contrato")) <= Dias_Aviso_Contrato_Eventual And _
+                                        DateDiff("d", Now, Rs_Consulta_Cat_Empleados.rdoColumns("Fecha_Termino_Contrato")) > 0 Then
+                                        'If Colorear_Fila = True Then
+                                            .Col = 0
+                                            For Columna = 1 To .Cols - 1
+                                                .Col = Columna
+                                                .Row = .Rows - 1
+                                                .CellBackColor = &H8080FF
+                                            Next Columna
+                                        'End If
+                                    End If
+                                    If DateDiff("d", Now, Rs_Consulta_Cat_Empleados.rdoColumns("Fecha_Termino_Contrato")) <= 0 Then
+                                        'If Colorear_Fila = True Then
+                                            .Col = 0
+                                            For Columna = 1 To .Cols - 1
+                                                .Col = Columna
+                                                .Row = .Rows - 1
+                                                .CellBackColor = &HC0&
+                                            Next Columna
+                                        'End If
+                                    End If
+                                End If
+                            End If
+                            Set Rs_Consulta_Cat_Empleados = Nothing
+                            Me.Refresh
+                        End With
+                            
+                        
+                        
+                        
+                        'If Str_Turno_De_Tabla <> "00003" Then
+                        
+                        
+                        'Else
+                        
+                        'End If
+                        
+                        
+                     End If
+                    
+                    
+                    
+                   
                 Else
                     'Consulta la asistencia ya validada para mostrarla en pantalla sin posibilidad de editarla
                     Mi_SQL = "SELECT * FROM Adm_Asistencias"
@@ -2365,6 +2397,7 @@ HANDLER:
         MsgBox Er.Description
     Next Er
 End Sub
+
 
 Private Sub Encabezado_Reporte(Titulo As String, Optional Fecha_Inicial As Date, Optional Fecha_Termino As Date, Optional Solo_mes As Boolean)
     
@@ -2659,7 +2692,7 @@ End Sub
 
 Private Sub Imprimir()
 Dim linea As String 'Obtiene el texto a imprimir
-Dim x As Printer
+Dim X As Printer
 Dim contar_linea As Integer
 Dim Foto_Empleado As New StdPicture
 Dim No_Tarjeta As String

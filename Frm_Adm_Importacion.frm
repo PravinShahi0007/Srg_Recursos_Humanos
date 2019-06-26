@@ -1,10 +1,10 @@
 VERSION 5.00
 Object = "{FE9DED34-E159-408E-8490-B720A5E632C7}#1.0#0"; "zkemkeeper.dll"
-Object = "{F9043C88-F6F2-101A-A3C9-08002B2F49FB}#1.2#0"; "COMDLG32.OCX"
+Object = "{F9043C88-F6F2-101A-A3C9-08002B2F49FB}#1.2#0"; "comdlg32.ocx"
 Object = "{5E9E78A0-531B-11CF-91F6-C2863C385E30}#1.0#0"; "MSFLXGRD.OCX"
 Object = "{BDC217C8-ED16-11CD-956C-0000C04E4C0A}#1.1#0"; "TABCTL32.OCX"
 Object = "{86CF1D34-0C5F-11D2-A9FC-0000F8754DA1}#2.0#0"; "MSCOMCT2.OCX"
-Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.2#0"; "MSCOMCTL.OCX"
+Object = "{831FDD16-0C5C-11D2-A9FC-0000F8754DA1}#2.2#0"; "mscomctl.ocx"
 Begin VB.Form Frm_Adm_Importacion 
    BackColor       =   &H00FFFFFF&
    BorderStyle     =   3  'Fixed Dialog
@@ -185,7 +185,7 @@ Begin VB.Form Frm_Adm_Importacion
             _ExtentY        =   556
             _Version        =   393216
             CustomFormat    =   "ddd dd MMM yyyy"
-            Format          =   125894659
+            Format          =   43450371
             CurrentDate     =   39931
          End
          Begin MSComCtl2.DTPicker Dtp_Importacion_Fecha_Termino_Automatico 
@@ -198,7 +198,7 @@ Begin VB.Form Frm_Adm_Importacion
             _ExtentY        =   556
             _Version        =   393216
             CustomFormat    =   "ddd dd MMM yyyy"
-            Format          =   125894659
+            Format          =   43450371
             CurrentDate     =   39931
          End
          Begin VB.CommandButton Btn_Importacion_Automatica 
@@ -322,7 +322,7 @@ Begin VB.Form Frm_Adm_Importacion
             _ExtentY        =   556
             _Version        =   393216
             CustomFormat    =   "ddd dd MMM yyyy"
-            Format          =   125894659
+            Format          =   43450371
             CurrentDate     =   39931
          End
          Begin MSComCtl2.DTPicker Dtp_Importacion_Fecha_Termino 
@@ -335,7 +335,7 @@ Begin VB.Form Frm_Adm_Importacion
             _ExtentY        =   556
             _Version        =   393216
             CustomFormat    =   "ddd dd MMM yyyy"
-            Format          =   125894659
+            Format          =   43450371
             CurrentDate     =   39931
          End
          Begin MSComctlLib.ProgressBar PrgBar_Importacion 
@@ -549,7 +549,7 @@ Begin VB.Form Frm_Adm_Importacion
                _ExtentY        =   556
                _Version        =   393216
                CustomFormat    =   "ddd dd MMM yyyy"
-               Format          =   125894659
+               Format          =   43450371
                CurrentDate     =   39931
             End
             Begin MSComCtl2.DTPicker Dtp_Asistencia_Fecha_Termino 
@@ -562,7 +562,7 @@ Begin VB.Form Frm_Adm_Importacion
                _ExtentY        =   556
                _Version        =   393216
                CustomFormat    =   "ddd dd MMM yyyy"
-               Format          =   125894659
+               Format          =   43450371
                CurrentDate     =   39931
             End
             Begin VB.Label Label13 
@@ -2120,7 +2120,7 @@ Dim Fecha As String
     Mi_SQL = Mi_SQL & "     WHERE Roles_Calendarios.No_Tarjeta = CE.No_Tarjeta"
     Mi_SQL = Mi_SQL & "     AND Roles_Calendarios.Fecha_Calculada = AARC.Fecha"
     Mi_SQL = Mi_SQL & " )"
-    Mi_SQL = Mi_SQL & " ORDER BY AARC.Fecha,CE.No_Tarjeta,CE.Apellido_Paterno,CE.Apellido_Materno,CE.Nombre,AARC.Hora DESC"
+    Mi_SQL = Mi_SQL & " ORDER BY AARC.Fecha,CE.No_Tarjeta,Apellido_Paterno,Apellido_Materno,Nombre,AARC.Hora DESC"
 
     Set Rs_Consulta_Cat_Clientes = Conectar_Ayudante.Recordset_Consultar(Mi_SQL)
     If Not Rs_Consulta_Cat_Clientes.EOF Then
@@ -2424,7 +2424,7 @@ Dim Fecha As String
     Mi_SQL = Mi_SQL & "     WHERE Roles_Calendarios.No_Tarjeta = CE.No_Tarjeta"
     Mi_SQL = Mi_SQL & "     AND Roles_Calendarios.Fecha_Calculada = AARC.Fecha"
     Mi_SQL = Mi_SQL & " )"
-    Mi_SQL = Mi_SQL & " ORDER BY AARC.Fecha,CE.No_Tarjeta,CE.Apellido_Paterno,CE.Apellido_Materno,CE.Nombre,AARC.Hora DESC"
+    Mi_SQL = Mi_SQL & " ORDER BY AARC.Fecha,CE.No_Tarjeta,Apellido_Paterno,Apellido_Materno,Nombre,AARC.Hora DESC"
     Set Rs_Consulta_Cat_Clientes = Conectar_Ayudante.Recordset_Consultar(Mi_SQL)
     If Not Rs_Consulta_Cat_Clientes.EOF Then
         With Rs_Consulta_Cat_Clientes
@@ -2609,7 +2609,7 @@ Dim Fecha As String
     Mi_SQL = Mi_SQL & "     WHERE Roles_Calendarios.No_Tarjeta = CE.No_Tarjeta"
     Mi_SQL = Mi_SQL & "     AND Roles_Calendarios.Fecha_Calculada = AARC.Fecha"
     Mi_SQL = Mi_SQL & " )"
-    Mi_SQL = Mi_SQL & " ORDER BY AARC.Fecha,CE.No_Tarjeta,CE.Apellido_Paterno,CE.Apellido_Materno,CE.Nombre,AARC.Hora DESC"
+    Mi_SQL = Mi_SQL & " ORDER BY AARC.Fecha,No_Tarjeta,Apellido_Paterno,Apellido_Materno,Nombre,AARC.Hora DESC"
 
     Set Rs_Consulta_Cat_Clientes = Conectar_Ayudante.Recordset_Consultar(Mi_SQL)
     If Not Rs_Consulta_Cat_Clientes.EOF Then
