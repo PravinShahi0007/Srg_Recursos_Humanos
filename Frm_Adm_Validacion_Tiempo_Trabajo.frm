@@ -116,7 +116,7 @@ Begin VB.Form Frm_Adm_Validación_Tiempo_Trabajo
             _ExtentY        =   556
             _Version        =   393216
             CustomFormat    =   "ddd dd MMM yyyy"
-            Format          =   89260032
+            Format          =   91160576
             CurrentDate     =   39940
          End
          Begin MSComctlLib.ProgressBar PrgBar_Validacion_Horas 
@@ -1326,6 +1326,7 @@ Dim Permiso_Referencia As String
 Dim Ruta_Transporte As String
 Dim Dia_Descanso As String
 Dim Str_Turno_De_Tabla As String
+Dim Str_Nombre_Turno_De_Tabla As String
 
 On Error GoTo HANDLER:
     Partida = 0
@@ -1544,24 +1545,26 @@ On Error GoTo HANDLER:
                 If Validada = "N" Then
                     
                     
-                    Mi_SQL = "select top 1 * from Adm_Cambios_Turnos"
-                    Mi_SQL = Mi_SQL & " where Empleado_ID = '" & .rdoColumns("Empleado_ID") & "'"
-                    Mi_SQL = Mi_SQL & " and Fecha_Cambio <= '" & Format(Fecha, "MM/dd/yyyy") & "'"
-                    Mi_SQL = Mi_SQL & " order by Fecha_Cambio desc, Consecutivo desc"
+                    Mi_SQL = "select top 1 ct.* , t.Nombre as Nombre_Turno "
+                    Mi_SQL = Mi_SQL & " from Adm_Cambios_Turnos ct "
+                    Mi_SQL = Mi_SQL & " join Cat_Turnos t on t.Turno_ID = ct.Turno_Nuevo_ID "
+                    Mi_SQL = Mi_SQL & " where ct.Empleado_ID = '" & .rdoColumns("Empleado_ID") & "'"
+                    Mi_SQL = Mi_SQL & " and ct.Fecha_Cambio <= '" & Format(Fecha, "MM/dd/yyyy") & "'"
+                    Mi_SQL = Mi_SQL & " order by ct.Fecha_Cambio desc, ct.Consecutivo desc"
                     Set Rs_Consulta_Turno_Empleado_De_Tabla_CambiosTurno = Conectar_Ayudante.Recordset_Consultar(Mi_SQL)
                     
                      If Not Rs_Consulta_Turno_Empleado_De_Tabla_CambiosTurno.EOF Then
                         Str_Turno_De_Tabla = Rs_Consulta_Turno_Empleado_De_Tabla_CambiosTurno.rdoColumns("Turno_Nuevo_ID")
-                        
+                        Str_Nombre_Turno_De_Tabla = Rs_Consulta_Turno_Empleado_De_Tabla_CambiosTurno.rdoColumns("Nombre_Turno")
                             
                         '--------------------------------------------------------------------------------------------
                         '--------------------------------------------------------------------------------------------
                         '--------------------------------------------------------------------------------------------
                         '--------------------------------------------------------------------------------------------
                         'Obtiene la informacion del turno del empleado
-                        Mi_SQL = "SELECT CE.Turno_ID,Cat_Turnos_Detalles.Hora_Inicio,Cat_Turnos_Detalles.Hora_Termino,Cat_Turnos_Detalles.Comida_Inicio,Cat_Turnos_Detalles.Comida_Termino,Cat_Turnos_Detalles.Horas_Turno,Cat_Turnos_Detalles.Horas_Comida,Cat_Turnos_Detalles.Dia_Descanso,CT.Nombre"
+                        Mi_SQL = "SELECT Cat_Turnos_Detalles.Turno_ID,Cat_Turnos_Detalles.Hora_Inicio,Cat_Turnos_Detalles.Hora_Termino,Cat_Turnos_Detalles.Comida_Inicio,Cat_Turnos_Detalles.Comida_Termino,Cat_Turnos_Detalles.Horas_Turno,Cat_Turnos_Detalles.Horas_Comida,Cat_Turnos_Detalles.Dia_Descanso,CT.Nombre"
                         Mi_SQL = Mi_SQL & " FROM Cat_Empleados CE,Cat_Turnos CT,Cat_Turnos_Detalles"
-                        Mi_SQL = Mi_SQL & " WHERE CT.Turno_ID = " & Str_Turno_De_Tabla
+                        Mi_SQL = Mi_SQL & " WHERE CT.Turno_ID = '" & Str_Turno_De_Tabla & "'"
                         Mi_SQL = Mi_SQL & " AND CT.Turno_ID=Cat_Turnos_Detalles.Turno_ID"
                         Mi_SQL = Mi_SQL & " AND CE.Empleado_ID='" & .rdoColumns("Empleado_ID") & "'"
                         If UCase(Format(Fecha, "dddd")) = "SABADO" Or UCase(Format(Fecha, "dddd")) = "SÁBADO" Or UCase(Format(Fecha, "dddd")) = "SATURDAY" Then
@@ -1776,8 +1779,13 @@ On Error GoTo HANDLER:
                                 End If
                             End If
                         End If
+                        
+                        Rs_Consulta_Turno_Empleado_De_Tabla_CambiosTurno.Close
                         Rs_Consulta_Informacion_Turnos.Close
+                        
                         Set Rs_Consulta_Informacion_Turnos = Nothing
+                        Set Rs_Consulta_Turno_Empleado_De_Tabla_CambiosTurno = Nothing
+                        
                         Me.Refresh
                         Hora_Real = 0
                         Hora_Real_Extra = 0
